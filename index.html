@@ -2,74 +2,171 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Referee Watch Prototype</title>
+  <title>Referee Watch Setup</title>
   <style>
     body {
-  background: #111;
-  color: white;
-  font-family: sans-serif;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-}
-.watch {
-  text-align: center;
-  border: 10px solid #00ff88;
-  border-radius: 50%;
-  padding: 40px;
-  width: 300px;
-  height: 300px;
-  box-sizing: border-box;
-}
-button {
-  background: #00ff88;
-  border: none;
-  margin: 5px;
-  padding: 10px 20px;
-  cursor: pointer;
-  font-size: 1rem;
-  border-radius: 5px;
-}
+      font-family: sans-serif;
+      background: #000000;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    
+    .container {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .watch {
+      background-color: #000000;
+      border: 8px solid #00ff88;
+      border-radius: 20px;
+      padding: 10px 20px 20px 20px;
+      width: 350px;
+      height: auto;
+      text-align: left;
+    }
+
+    .field {
+      margin: 10px 0;
+      font-size: 1rem;
+    }
+
+    .selected {
+      color: #00ff55;
+      font-weight: bold;
+    }
+
+    .edit-mode {
+      margin-top: 10px;
+      color: yellow;
+      font-weight: bold;
+    }
+
+    .buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    button {
+      background: #00ff88;
+      color: #000;
+      border: none;
+      padding: 10px 15px;
+      font-size: 1rem;
+      cursor: pointer;
+      border-radius: 6px;
+      width: 60px;
+    }
   </style>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="author" content="Meredith Phipps">
 </head>
 <body>
-  <div class="watch">
-    <h1 id="timer">00:00</h1>
-    <button onclick="startTimer()">Start</button>
-    <button onclick="pauseTimer()">Pause</button>
-    <button onclick="resetTimer()">Reset</button>
+  <div class="container">
+    <div class="watch">
+      <h2>Game Setup</h2>
+      <div id="fields"></div>
+      <div class="edit-mode" id="editIndicator">Edit Mode: OFF</div>
+    </div>
+    <div class="buttons">
+      <button id="btnA">A</button>
+      <button id="btnB">B</button>
+      <button id="btnC">C</button>
+      <button id="btnD">D</button>
+      <button id="btnE">E</button>
+    </div>
   </div>
+
   <script>
-    let seconds = 0;
-let timerInterval;
+    const fields = [
+      { label: 'Half Length', key: 'halfLength', value: 45, type: 'number' },
+      { label: 'Halftime Length', key: 'halftimeLength', value: 15, type: 'number' },
+      { label: 'Substitution Limit', key: 'subs', value: 5, type: 'number' },
+      { label: 'Overtime Period', key: 'overtimeLength', value: 15, type: 'number' },
+      { label: 'Enable Stoppage Time', key: 'stoppageTime', value: true, type: 'boolean' },
+      { label: 'Enable Overtime', key: 'overtime', value: false, type: 'boolean' },
+      { label: 'Enable Penalty Shootout', key: 'penaltyShootout', value: false, type: 'boolean' }
+    ];
 
-function updateDisplay() {
-  const min = String(Math.floor(seconds / 60)).padStart(2, '0');
-  const sec = String(seconds % 60).padStart(2, '0');
-  document.getElementById('timer').textContent = `${min}:${sec}`;
-}
+    let selectedIndex = 0;
+    let isEditMode = false;
+    let holdTimeout;
 
-function startTimer() {
-  if (timerInterval) return; // prevent multiple intervals
-  timerInterval = setInterval(() => {
-    seconds++;
-    updateDisplay();
-  }, 1000);
-}
+    const fieldsDiv = document.getElementById('fields');
+    const editIndicator = document.getElementById('editIndicator');
 
-function pauseTimer() {
-  clearInterval(timerInterval);
-  timerInterval = null;
-}
+    function renderFields() {
+      fieldsDiv.innerHTML = '';
+      fields.forEach((field, index) => {
+        const div = document.createElement('div');
+        div.className = 'field';
+        if (isEditMode && index === selectedIndex) div.classList.add('selected');
+        div.innerText = `${field.label}: ${field.value}`;
+        fieldsDiv.appendChild(div);
+      });
+      editIndicator.innerText = `Edit Mode: ${isEditMode ? 'ON' : 'OFF'}`;
+    }
 
-function resetTimer() {
-  pauseTimer();
-  seconds = 0;
-  updateDisplay();
-}
+    function increaseValue() {
+      const field = fields[selectedIndex];
+      if (field.type === 'number') {
+        field.value += 1;
+      } else {
+        field.value = !field.value;
+      }
+      renderFields();
+    }
+
+    function decreaseValue() {
+      const field = fields[selectedIndex];
+      if (field.type === 'number') {
+        if (field.value > 0) field.value -= 1;
+      } else {
+        field.value = !field.value;
+      }
+      renderFields();
+    }
+
+    // Button A: hold to toggle edit mode, press to cycle selection
+    const btnA = document.getElementById('btnA');
+    btnA.addEventListener('mousedown', () => {
+      holdTimeout = setTimeout(() => {
+        isEditMode = !isEditMode;
+        renderFields();
+      }, 700); // hold duration to toggle edit mode
+    });
+
+    btnA.addEventListener('mouseup', () => {
+      clearTimeout(holdTimeout);
+      if (isEditMode) {
+        selectedIndex = (selectedIndex + 1) % fields.length;
+        renderFields();
+      }
+    });
+
+    // B increases
+    document.getElementById('btnB').addEventListener('click', () => {
+      if (isEditMode) increaseValue();
+    });
+
+    // D decreases
+    document.getElementById('btnD').addEventListener('click', () => {
+      if (isEditMode) decreaseValue();
+    });
+
+    // Placeholder buttons
+    document.getElementById('btnC').addEventListener('click', () => {
+      alert("Button C pressed (no action assigned)");
+    });
+
+    document.getElementById('btnE').addEventListener('click', () => {
+      alert("Button E pressed (no action assigned)");
+    });
+
+    renderFields();
   </script>
 </body>
 </html>
