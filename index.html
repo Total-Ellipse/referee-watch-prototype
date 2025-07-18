@@ -6,28 +6,31 @@
   <style>
     body {
       font-family: sans-serif;
-      background: #000000;
+      background: #111111;
       color: #ffffff;
       display: flex;
       align-items: center;
       justify-content: center;
       height: 100vh;
     }
-    
-    .container {
-      display: flex;
-      gap: 20px;
-      align-items: center;
+
+    .wrapper {
+      position: relative;
     }
 
-    .watch {
-      background-color: #000000;
+    .watch-container {
+      position: relative;
+      background-color: #222;
       border: 8px solid #00ff88;
       border-radius: 20px;
-      padding: 10px 20px 20px 20px;
       width: 350px;
-      height: auto;
-      text-align: left;
+      padding: 30px 20px 60px;
+      box-sizing: border-box;
+    }
+
+    .watch-header {
+      text-align: center;
+      margin-bottom: 10px;
     }
 
     .field {
@@ -36,7 +39,7 @@
     }
 
     .selected {
-      color: #00ff55;
+      color: #00ff88;
       font-weight: bold;
     }
 
@@ -44,53 +47,66 @@
       margin-top: 10px;
       color: yellow;
       font-weight: bold;
+      text-align: center;
     }
 
-    .buttons {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    button {
+    /* Buttons around the watch */
+    .btn {
+      position: absolute;
       background: #00ff88;
       color: #000;
       border: none;
-      padding: 10px 15px;
+      padding: 10px 10px;
       font-size: 1rem;
       cursor: pointer;
       border-radius: 6px;
+      height: 50px;
+      width: 40px;
+    }
+
+    #btnA { top: 25px; left: 0; transform: translateX(-100%); }
+    #btnB { top: 25px; right: 0; transform: translateX(100%); }
+    #btnC { bottom: 25px; left: 0; transform: translateX(-100%); }
+    #btnD { bottom: 25px; right: 0; transform: translateX(100%); }
+    #btnE {
+      bottom: -40px;
+      left: 50%;
+      transform: translateX(-50%);
       width: 60px;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="watch">
-      <h2>Game Setup</h2>
+  <div class="wrapper">
+    <!-- Buttons around the watch face -->
+    <button class="btn" id="btnA">A</button>
+    <button class="btn" id="btnB">B</button>
+    <button class="btn" id="btnC">C</button>
+    <button class="btn" id="btnD">D</button>
+    <button class="btn" id="btnE">E</button>
+
+    <!-- Watch face -->
+    <div class="watch-container">
+      <h2 id = "mode"></h2>
       <div id="fields"></div>
       <div class="edit-mode" id="editIndicator">Edit Mode: OFF</div>
-    </div>
-    <div class="buttons">
-      <button id="btnA">A</button>
-      <button id="btnB">B</button>
-      <button id="btnC">C</button>
-      <button id="btnD">D</button>
-      <button id="btnE">E</button>
     </div>
   </div>
 
   <script>
     const fields = [
-      { label: 'Half Length', key: 'halfLength', value: 45, type: 'number' },
-      { label: 'Halftime Length', key: 'halftimeLength', value: 15, type: 'number' },
+      { label: 'Half Length (min)', key: 'halfLength', value: 45, type: 'number' },
+      { label: 'Halftime Length (min)', key: 'halftimeLength', value: 15, type: 'number' },
       { label: 'Substitution Limit', key: 'subs', value: 5, type: 'number' },
-      { label: 'Overtime Period', key: 'overtimeLength', value: 15, type: 'number' },
+      { label: 'Overtime Period (min)', key: 'overtimeLength', value: 15, type: 'number' },
       { label: 'Enable Stoppage Time', key: 'stoppageTime', value: true, type: 'boolean' },
       { label: 'Enable Overtime', key: 'overtime', value: false, type: 'boolean' },
       { label: 'Enable Penalty Shootout', key: 'penaltyShootout', value: false, type: 'boolean' }
     ];
-
+    
+    let mode = 'Game Setup';
+    updateMode();
+    
     let selectedIndex = 0;
     let isEditMode = false;
     let holdTimeout;
@@ -156,17 +172,28 @@
     document.getElementById('btnD').addEventListener('click', () => {
       if (isEditMode) decreaseValue();
     });
-
-    // Placeholder buttons
+    
+    // C goes backwards in mode progression
     document.getElementById('btnC').addEventListener('click', () => {
-      alert("Button C pressed (no action assigned)");
+      if (mode === 'Team Setup' && isEditMode === false) {
+        mode = 'Game Setup';
+        updateMode();
+      }
     });
-
+    
+    // E goes forwards in mode progression
     document.getElementById('btnE').addEventListener('click', () => {
-      alert("Button E pressed (no action assigned)");
+      if (mode === 'Game Setup' && isEditMode === false) {
+        mode = 'Team Setup';
+        updateMode();
+      }
     });
 
     renderFields();
+    
+    function updateMode() {
+      document.getElementById('mode').innerHTML = mode
+    }
   </script>
 </body>
 </html>
