@@ -72,6 +72,28 @@
       transform: translateX(-50%);
       width: 60px;
     }
+    @keyframes flash {
+      0%, 49% {
+        opacity: 1;
+      }
+      50%, 100% {
+        opacity: 0;
+      }
+}
+
+    .edit-mode {
+      margin-top: 10px;
+      color: #fff;
+      font-weight: bold;
+      text-align: right;
+      visibility: hidden;
+    }
+
+    .edit-mode.flash {
+      animation: flash 1s steps(1, start) infinite;
+      visibility: visible;
+    }
+
   </style>
 </head>
 <body>
@@ -130,7 +152,6 @@
         const div = document.createElement('div');
         div.className = 'field';
         if (isEditMode && index === selectedIndex) div.classList.add('selected');
-
         let valueDisplay = '';
         if (field.type === 'abbrev') {
           valueDisplay = field.value.join('');
@@ -142,7 +163,12 @@
         fieldsDiv.appendChild(div);
       });
 
-      editIndicator.style.visibility = (isEditMode ? "visible":"hidden");
+      if (isEditMode) {
+        editIndicator.classList.add('flash');
+      } else {
+        editIndicator.classList.remove('flash');
+      }
+
     }
 
     function increaseValue() {
