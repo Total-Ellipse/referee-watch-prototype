@@ -6,8 +6,8 @@
   <style>
     body {
       font-family: sans-serif;
-      background: #111111;
-      color: #ffffff;
+      background: #111;
+      color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -24,13 +24,12 @@
       border: 8px solid #00ff88;
       border-radius: 20px;
       width: 350px;
-      padding: 30px 20px 60px;
+      padding: 10px 20px 20px;
       box-sizing: border-box;
     }
 
     .watch-header {
       text-align: center;
-      margin-bottom: 10px;
     }
 
     .field {
@@ -45,12 +44,11 @@
 
     .edit-mode {
       margin-top: 10px;
-      color: yellow;
+      color: #fff;
       font-weight: bold;
-      text-align: center;
+      text-align: right;
     }
 
-    /* Buttons around the watch */
     .btn {
       position: absolute;
       background: #00ff88;
@@ -78,23 +76,21 @@
 </head>
 <body>
   <div class="wrapper">
-    <!-- Buttons around the watch face -->
     <button class="btn" id="btnA">A</button>
     <button class="btn" id="btnB">B</button>
     <button class="btn" id="btnC">C</button>
     <button class="btn" id="btnD">D</button>
     <button class="btn" id="btnE">E</button>
 
-    <!-- Watch face -->
     <div class="watch-container">
-      <h2 id = "mode"></h2>
+      <h2 class="watch-header" id="mode"></h2>
       <div id="fields"></div>
-      <div class="edit-mode" id="editIndicator">Edit Mode: OFF</div>
+      <div class="edit-mode" id="editIndicator">Edit</div>
     </div>
   </div>
 
   <script>
-    const fields = [
+    const gameFields = [
       { label: 'Half Length (min)', key: 'halfLength', value: 45, type: 'number' },
       { label: 'Halftime Length (min)', key: 'halftimeLength', value: 15, type: 'number' },
       { label: 'Substitution Limit', key: 'subs', value: 5, type: 'number' },
@@ -103,97 +99,152 @@
       { label: 'Enable Overtime', key: 'overtime', value: false, type: 'boolean' },
       { label: 'Enable Penalty Shootout', key: 'penaltyShootout', value: false, type: 'boolean' }
     ];
-    
+
+    const teamFields = [
+      { label: 'Team 1 Abbrev', key: 'team1Abbrev', value: ['T', 'M', '1'], type: 'abbrev', charIndex: 0 },
+      { label: 'Team 2 Abbrev', key: 'team2Abbrev', value: ['T', 'M', '2'], type: 'abbrev', charIndex: 0 },
+      { label: 'Team 1 Color', key: 'team1Color', value: 'Red', type: 'color' },
+      { label: 'Team 2 Color', key: 'team2Color', value: 'Blue', type: 'color' }
+    ];
+
+    const colorOptions = ['Red', 'Blue', 'Green', 'Yellow', 'Black', 'White'];
+    const charOptions = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split('');
+
     let mode = 'Game Setup';
-    updateMode();
-    
     let selectedIndex = 0;
     let isEditMode = false;
     let holdTimeout;
 
     const fieldsDiv = document.getElementById('fields');
     const editIndicator = document.getElementById('editIndicator');
+    const modeHeader = document.getElementById('mode');
+
+    function getCurrentFields() {
+      return mode === 'Game Setup' ? gameFields : teamFields;
+    }
 
     function renderFields() {
+      const fields = getCurrentFields();
       fieldsDiv.innerHTML = '';
       fields.forEach((field, index) => {
         const div = document.createElement('div');
         div.className = 'field';
         if (isEditMode && index === selectedIndex) div.classList.add('selected');
-        div.innerText = `${field.label}: ${field.value}`;
+
+        let valueDisplay = '';
+        if (field.type === 'abbrev') {
+          valueDisplay = field.value.join('');
+        } else {
+          valueDisplay = field.value;
+        }
+
+        div.innerText = `${field.label}: ${valueDisplay}`;
         fieldsDiv.appendChild(div);
       });
-      editIndicator.innerText = `Edit Mode: ${isEditMode ? 'ON' : 'OFF'}`;
+
+      editIndicator.style.visibility = (isEditMode ? "visible":"hidden");
     }
 
     function increaseValue() {
-      const field = fields[selectedIndex];
+      const field = getCurrentFields()[selectedIndex];
+
       if (field.type === 'number') {
         field.value += 1;
-      } else {
+      } else if (field.type === 'boolean') {
         field.value = !field.value;
+      } else if (field.type === 'color') {
+        const idx = colorOptions.indexOf(field.value);
+        field.value = colorOptions[(idx + 1) % colorOptions.length];
+      } else if (field.type === 'abbrev') {
+        const i = field.charIndex;
+        const currentChar = field.value[i];
+        const idx = charOptions.indexOf(currentChar);
+        field.value[i] = charOptions[(idx + 1) % charOptions.length];
       }
+
       renderFields();
     }
 
     function decreaseValue() {
-      const field = fields[selectedIndex];
+      const field = getCurrentFields()[selectedIndex];
+
       if (field.type === 'number') {
         if (field.value > 0) field.value -= 1;
-      } else {
+      } else if (field.type === 'boolean') {
         field.value = !field.value;
+      } else if (field.type === 'color') {
+        const idx = colorOptions.indexOf(field.value);
+        field.value = colorOptions[(idx - 1 + colorOptions.length) % colorOptions.length];
+      } else if (field.type === 'abbrev') {
+        const i = field.charIndex;
+        const currentChar = field.value[i];
+        const idx = charOptions.indexOf(currentChar);
+        field.value[i] = charOptions[(idx - 1 + charOptions.length) % charOptions.length];
       }
+
       renderFields();
     }
 
-    // Button A: hold to toggle edit mode, press to cycle selection
-    const btnA = document.getElementById('btnA');
-    btnA.addEventListener('mousedown', () => {
+    function nextSelection() {
+      const fields = getCurrentFields();
+      const field = fields[selectedIndex];
+      if (field.type === 'abbrev') {
+        field.charIndex += 1;
+        if (field.charIndex >= field.value.length) {
+          field.charIndex = 0;
+          selectedIndex = (selectedIndex + 1) % fields.length;
+        }
+      } else {
+        selectedIndex = (selectedIndex + 1) % fields.length;
+      }
+
+      renderFields();
+    }
+
+    function updateMode() {
+      modeHeader.innerText = mode;
+      selectedIndex = 0;
+      renderFields();
+    }
+
+    // Button logic
+    document.getElementById('btnA').addEventListener('mousedown', () => {
       holdTimeout = setTimeout(() => {
         isEditMode = !isEditMode;
         renderFields();
-      }, 700); // hold duration to toggle edit mode
+      }, 700);
     });
 
-    btnA.addEventListener('mouseup', () => {
+    document.getElementById('btnA').addEventListener('mouseup', () => {
       clearTimeout(holdTimeout);
       if (isEditMode) {
-        selectedIndex = (selectedIndex + 1) % fields.length;
-        renderFields();
+        nextSelection();
       }
     });
 
-    // B increases
     document.getElementById('btnB').addEventListener('click', () => {
       if (isEditMode) increaseValue();
     });
 
-    // D decreases
     document.getElementById('btnD').addEventListener('click', () => {
       if (isEditMode) decreaseValue();
     });
-    
-    // C goes backwards in mode progression
+
     document.getElementById('btnC').addEventListener('click', () => {
-      if (mode === 'Team Setup' && isEditMode === false) {
+      if (mode === 'Team Setup' && !isEditMode) {
         mode = 'Game Setup';
         updateMode();
       }
     });
-    
-    // E goes forwards in mode progression
+
     document.getElementById('btnE').addEventListener('click', () => {
-      if (mode === 'Game Setup' && isEditMode === false) {
+      if (mode === 'Game Setup' && !isEditMode) {
         mode = 'Team Setup';
         updateMode();
       }
     });
 
-    renderFields();
-    
-    function updateMode() {
-      document.getElementById('mode').innerHTML = mode
-    }
+    updateMode();
   </script>
 </body>
 </html>
