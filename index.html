@@ -80,18 +80,12 @@
         opacity: 0;
       }
 }
-
-    .edit-mode {
-      margin-top: 10px;
-      color: #fff;
-      font-weight: bold;
-      text-align: right;
-      visibility: hidden;
+    .field-value.flash {
+      animation: flash .7s steps(1, start) infinite;
     }
-
-    .edit-mode.flash {
-      animation: flash 1s steps(1, start) infinite;
-      visibility: visible;
+    
+    .field-char.flash {
+      animation: flash 0.7s steps(1, start) infinite;
     }
 
   </style>
@@ -116,9 +110,8 @@
       { label: 'Half Length (min)', key: 'halfLength', value: 45, type: 'number' },
       { label: 'Halftime Length (min)', key: 'halftimeLength', value: 15, type: 'number' },
       { label: 'Substitution Limit', key: 'subs', value: 5, type: 'number' },
-      { label: 'Overtime Period (min)', key: 'overtimeLength', value: 15, type: 'number' },
-      { label: 'Enable Stoppage Time', key: 'stoppageTime', value: true, type: 'boolean' },
       { label: 'Enable Overtime', key: 'overtime', value: false, type: 'boolean' },
+      { label: 'Overtime Length', key: 'overtimeLength', value: 15, type: 'number' },
       { label: 'Enable Penalty Shootout', key: 'penaltyShootout', value: false, type: 'boolean' }
     ];
 
@@ -140,6 +133,7 @@
     const fieldsDiv = document.getElementById('fields');
     const editIndicator = document.getElementById('editIndicator');
     const modeHeader = document.getElementById('mode');
+    updateMode();
 
     function getCurrentFields() {
       return mode === 'Game Setup' ? gameFields : teamFields;
@@ -151,24 +145,31 @@
       fields.forEach((field, index) => {
         const div = document.createElement('div');
         div.className = 'field';
-        if (isEditMode && index === selectedIndex) div.classList.add('selected');
+        if (isEditMode && index === selectedIndex) div.classList.add('flash');
         let valueDisplay = '';
         if (field.type === 'abbrev') {
-          valueDisplay = field.value.join('');
+          valueDisplay = field.value.map((char, charIdx) => {
+            const isSelectedChar = isEditMode &&
+            index === selectedIndex && field.charIndex === charIdx;
+            return `<span class="field-char${isSelectedChar ?
+            ' flash' : ''}">${char}</span>`;
+          }).join('');
         } else {
           valueDisplay = field.value;
         }
+        
+        div.innerHTML = `${field.label}:
+        <span class="field-value${isEditMode && index === selectedIndex ?
+        ' flash' : ''}">${valueDisplay}</span>`;
 
-        div.innerText = `${field.label}: ${valueDisplay}`;
         fieldsDiv.appendChild(div);
       });
-
+      
       if (isEditMode) {
-        editIndicator.classList.add('flash');
+        editIndicator.style.visibility = 'visible';
       } else {
-        editIndicator.classList.remove('flash');
+        editIndicator.style.visibility = 'hidden';
       }
-
     }
 
     function increaseValue() {
@@ -270,7 +271,6 @@
       }
     });
 
-    updateMode();
   </script>
 </body>
 </html>
