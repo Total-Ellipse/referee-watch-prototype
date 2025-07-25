@@ -37,11 +37,6 @@
       font-size: 1rem;
     }
 
-    .selected {
-      color: #00ff88;
-      font-weight: bold;
-    }
-
     .edit-mode {
       margin-top: 10px;
       color: #fff;
@@ -128,6 +123,7 @@
     let mode = 'Game Setup';
     let selectedIndex = 0;
     let isEditMode = false;
+    let justEnteredEditMode = false;
     let holdTimeout;
 
     const fieldsDiv = document.getElementById('fields');
@@ -158,9 +154,14 @@
           valueDisplay = field.value;
         }
         
-        div.innerHTML = `${field.label}:
-        <span class="field-value${isEditMode && index === selectedIndex ?
-        ' flash' : ''}">${valueDisplay}</span>`;
+        if (field.type === 'abbrev') {
+          div.innerHTML = `${field.label}: ${valueDisplay}`;
+        } else {
+          div.innerHTML = `${field.label}: 
+          <span class="field-value${isEditMode && index === selectedIndex ?
+          ' flash' : ''}">${valueDisplay}</span>`;
+        }
+
 
         fieldsDiv.appendChild(div);
       });
@@ -238,15 +239,17 @@
     document.getElementById('btnA').addEventListener('mousedown', () => {
       holdTimeout = setTimeout(() => {
         isEditMode = !isEditMode;
+        justEnteredEditMode = isEditMode; // only true when entering edit mode
         renderFields();
       }, 700);
     });
 
     document.getElementById('btnA').addEventListener('mouseup', () => {
       clearTimeout(holdTimeout);
-      if (isEditMode) {
+      if (isEditMode && !justEnteredEditMode) {
         nextSelection();
       }
+      justEnteredEditMode = false;
     });
 
     document.getElementById('btnB').addEventListener('click', () => {
