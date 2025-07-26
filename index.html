@@ -136,6 +136,10 @@
     }
 
     function renderFields() {
+      if (mode === '1st Half') {
+        firstHalf();
+        return; // exit renderFields()
+      }
       const fields = getCurrentFields();
       fieldsDiv.innerHTML = '';
       fields.forEach((field, index) => {
@@ -268,12 +272,23 @@
     });
 
     document.getElementById('btnE').addEventListener('click', () => {
-      if (mode === 'Game Setup' && !isEditMode) {
-        mode = 'Team Setup';
-        updateMode();
+      if (!isEditMode) {
+        switch (mode) {
+          case 'Game Setup':
+            mode = 'Team Setup';
+            updateMode();
+            break;
+          case 'Team Setup':
+            mode = '1st Half';
+            updateMode();
+            break;
+        }
       }
     });
-
+    
+    function firstHalf() {
+      alert("1st Half");
+    }
   </script>
 </body>
 </html>
