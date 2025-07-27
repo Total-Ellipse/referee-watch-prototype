@@ -94,7 +94,7 @@
       font-size: 2rem;
       text-align: center;
       margin: 20px 0;
-
+    }      
   </style>
 </head>
 <body>
@@ -142,6 +142,19 @@
     const editIndicator = document.getElementById('editIndicator');
     const modeHeader = document.getElementById('mode');
     updateMode();
+    
+    let timerIntervalId = null;
+    let isPaused = false;
+    let timeRemaining = 0; // will be initialized in firstHalf()
+    
+    const teamStats = {
+        team1: { goals: 0, subs: 0 },
+        team2: { goals: 0, subs: 0 }
+    };
+   
+    let pendingAdjustment = null;
+    const statsDiv = document.createElement('div');
+    statsDiv.classList.add('stats');
 
     function getCurrentFields() {
       return mode === 'Game Setup' ? gameFields : teamFields;
@@ -253,27 +266,74 @@
 
     // Button logic
     document.getElementById('btnA').addEventListener('mousedown', () => {
-      holdTimeout = setTimeout(() => {
-        isEditMode = !isEditMode;
-        justEnteredEditMode = isEditMode; // only true when entering edit mode
-        renderFields();
-      }, 700);
+      if (mode === 'Game Setup' || mode === 'Team Setup') {
+        holdTimeout = setTimeout(() => {
+          isEditMode = !isEditMode;
+          justEnteredEditMode = isEditMode; // only true when entering edit mode
+          renderFields();
+        }, 700);
+      }
     });
 
     document.getElementById('btnA').addEventListener('mouseup', () => {
-      clearTimeout(holdTimeout);
-      if (isEditMode && !justEnteredEditMode) {
-        nextSelection();
+      switch (mode) {
+        case 'Game Setup':
+          clearTimeout(holdTimeout);
+          if (isEditMode && !justEnteredEditMode) {
+            nextSelection();
+          }
+        case 'Team Setup':
+          clearTimeout(holdTimeout);
+          if (isEditMode && !justEnteredEditMode) {
+            nextSelection();
+          }
+          justEnteredEditMode = false;
+          break;
+        case '1st Half':
+          if (pendingAdjustment) {
+            applyStatChange(1, 'goals', pendingAdjustment === 'increase' ? 1 : -1);
+            pendingAdjustment = null;
+          }
+          break;
       }
-      justEnteredEditMode = false;
     });
 
     document.getElementById('btnB').addEventListener('click', () => {
-      if (isEditMode) increaseValue();
+      switch (mode) {
+        case 'Game Setup':
+          increaseValue();
+          break;
+        case 'Team Setup':
+          increaseValue();
+          break;
+        case '1st Half':
+          if (!pendingAdjustment) {
+            pendingAdjustment = 'increase'
+          } else {
+            applyStatChange(2, 'goals', pendingAdjustment === 'increase' ? 1 : -1);
+            pendingAdjustment = null;
+          }
+          break;
+      }
     });
 
     document.getElementById('btnD').addEventListener('click', () => {
-      if (isEditMode) decreaseValue();
+      switch (mode) {
+        case 'Game Setup':
+          decreaseValue();
+          break;
+        case 'Team Setup':
+          decreaseValue();
+          break;
+        case '1st Half':
+          if (!pendingAdjustment) {
+            pendingAdjustment = 'decrease'
+          } else {
+            applyStatChange(2, 'subs', pendingAdjustment === 'increase' ? 1 : -1);
+            pendingAdjustment = null;
+          }
+          break;
+      }
     });
 
     document.getElementById('btnC').addEventListener('click', () => {
@@ -284,8 +344,14 @@
             updateMode();
             break;
           case '1st Half':
-            mode = 'Team Setup';
-            updateMode();
+            if (pendingAdjustment) {
+              applyStatChange(1, 'subs', pendingAdjustment === 'increase' ? 1 : -1);
+              pendingAdjustment = null;
+            } else {
+              mode = 'Team Setup';
+              updateMode();
+              pendingAdjustment = null;
+            }
             break;
           default:
             alert('invalid mode');
@@ -296,18 +362,22 @@
 
     document.getElementById('btnE').addEventListener('click', () => {
       if (!isEditMode) {
-        switch (mode) {
-          case 'Game Setup':
-            mode = 'Team Setup';
-            updateMode();
-            break;
-          case 'Team Setup':
-            mode = '1st Half';
-            updateMode();
-            break;
-          default:
-            alert('invalid mode');
-            break;
+        if (mode === '1st Half') {
+        isPaused = !isPaused;
+        } else {
+          switch (mode) {
+            case 'Game Setup':
+              mode = 'Team Setup';
+              updateMode();
+              break;
+            case 'Team Setup':
+              mode = '1st Half';
+              updateMode();
+              break;
+            default:
+              alert('invalid mode');
+              break;
+          }
         }
       }
     });
@@ -315,7 +385,7 @@
     function firstHalf() {
       fieldsDiv.innerHTML = '';
       const halfLengthMin = gameFields.find(f => f.key === 'halfLength').value;    
-      let timeRemaining = halfLengthMin * 60; // seconds
+      timeRemaining = halfLengthMin * 60; // seconds
 
       // Create timer display
       const timerDiv = document.createElement('div');
@@ -326,45 +396,60 @@
         const minutes = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
         const seconds = (timeRemaining % 60).toString().padStart(2, '0');
         timerDiv.textContent = `${minutes}:${seconds}`;
+        if (isPaused) {
+          timerDiv.textContent += ' (Paused)';
+        }
       }
 
       updateTimer();
 
-      const intervalId = setInterval(() => {
-        if (timeRemaining > 0) {
+      timerIntervalId = setInterval(() => {
+        if (!isPaused && timeRemaining > 0) {
           timeRemaining--;
           updateTimer();
-        } else {
-          clearInterval(intervalId);
+        } else if (timeRemaining <= 0) {
+          clearInterval(timerIntervalId);
           timerDiv.textContent = '00:00';
         }
       }, 1000);
-
-      // Team info
+      renderStats();
+    }
+    
+    function renderStats() {
       const team1Name = teamFields.find(f => f.key === 'team1Abbrev').value.join('');
       const team2Name = teamFields.find(f => f.key === 'team2Abbrev').value.join('');
-      const subsAllowed = gameFields.find(f => f.key === 'subs').value;
-      const teamStats = {
-        team1: { goals: 0, subs: 0 },
-        team2: { goals: 0, subs: 0 }
-      };
-
-      const statsDiv = document.createElement('div');
-      statsDiv.classList.add('stats');
-
-      function createTeamColumn(team, label) {
-        const col = document.createElement('div');
-        col.style.textAlign = 'center';
-        col.innerHTML = `
-          <div style="font-size: 1.2rem; font-weight: bold;">${label}</div>
-          <div>Goals: ${teamStats[team].goals}</div>
-          <div>Subs: ${teamStats[team].subs} / ${subsAllowed}</div>
-        `;
-        return col;
-      }
+      statsDiv.innerHTML = '';
       statsDiv.appendChild(createTeamColumn('team1', team1Name));
       statsDiv.appendChild(createTeamColumn('team2', team2Name));
       fieldsDiv.appendChild(statsDiv);
+    }
+      
+    function createTeamColumn(team, label) {
+      const subsAllowed = gameFields.find(f => f.key === 'subs').value;
+      const col = document.createElement('div');
+      col.style.textAlign = 'center';
+      col.innerHTML = `
+        <div style="font-size: 1.2rem; font-weight: bold;">${label}</div>
+        <div>Goals: ${teamStats[team].goals}</div>
+        <div>Subs: ${teamStats[team].subs} / ${subsAllowed}</div>`;
+        return col;
+    }
+    
+    function applyStatChange(team, type, amount) {
+      if (team === 1) {
+        if (type === 'goals') {
+          teamStats.team1.goals = Math.max(0, teamStats.team1.goals + amount);
+        } else if (type === 'subs') {
+          teamStats.team1.subs = Math.max(0, teamStats.team1.subs + amount);
+        }
+      } else if (team === 2) {
+        if (type === 'goals') {
+          teamStats.team2.goals = Math.max(0, teamStats.team2.goals + amount);
+        } else if (type === 'subs') {
+          teamStats.team2.subs = Math.max(0, teamStats.team2.subs + amount);
+        }
+      }
+      renderStats();
     }
 
   </script>
