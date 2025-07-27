@@ -82,6 +82,18 @@
     .field-char.flash {
       animation: flash 0.7s steps(1, start) infinite;
     }
+    
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    
+    .timer {
+      font-size: 2rem;
+      text-align: center;
+      margin: 20px 0;
 
   </style>
 </head>
@@ -102,8 +114,8 @@
 
   <script>
     const gameFields = [
-      { label: 'Half Length (min)', key: 'halfLength', value: 45, type: 'number' },
-      { label: 'Halftime Length (min)', key: 'halftimeLength', value: 15, type: 'number' },
+      { label: 'Half Length', key: 'halfLength', value: 45, type: 'number' },
+      { label: 'Halftime Length', key: 'halftimeLength', value: 15, type: 'number' },
       { label: 'Substitution Limit', key: 'subs', value: 5, type: 'number' },
       { label: 'Enable Overtime', key: 'overtime', value: false, type: 'boolean' },
       { label: 'Overtime Length', key: 'overtimeLength', value: 15, type: 'number' },
@@ -265,9 +277,20 @@
     });
 
     document.getElementById('btnC').addEventListener('click', () => {
-      if (mode === 'Team Setup' && !isEditMode) {
-        mode = 'Game Setup';
-        updateMode();
+      if (!isEditMode) {
+        switch (mode) {
+          case 'Team Setup':
+            mode = 'Game Setup';
+            updateMode();
+            break;
+          case '1st Half':
+            mode = 'Team Setup';
+            updateMode();
+            break;
+          default:
+            alert('invalid mode');
+            break;
+         }
       }
     });
 
@@ -282,13 +305,68 @@
             mode = '1st Half';
             updateMode();
             break;
+          default:
+            alert('invalid mode');
+            break;
         }
       }
     });
     
     function firstHalf() {
-      alert("1st Half");
+      fieldsDiv.innerHTML = '';
+      const halfLengthMin = gameFields.find(f => f.key === 'halfLength').value;    
+      let timeRemaining = halfLengthMin * 60; // seconds
+
+      // Create timer display
+      const timerDiv = document.createElement('div');
+      timerDiv.classList.add('timer');
+      fieldsDiv.appendChild(timerDiv);
+
+      function updateTimer() {
+        const minutes = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
+        const seconds = (timeRemaining % 60).toString().padStart(2, '0');
+        timerDiv.textContent = `${minutes}:${seconds}`;
+      }
+
+      updateTimer();
+
+      const intervalId = setInterval(() => {
+        if (timeRemaining > 0) {
+          timeRemaining--;
+          updateTimer();
+        } else {
+          clearInterval(intervalId);
+          timerDiv.textContent = '00:00';
+        }
+      }, 1000);
+
+      // Team info
+      const team1Name = teamFields.find(f => f.key === 'team1Abbrev').value.join('');
+      const team2Name = teamFields.find(f => f.key === 'team2Abbrev').value.join('');
+      const subsAllowed = gameFields.find(f => f.key === 'subs').value;
+      const teamStats = {
+        team1: { goals: 0, subs: 0 },
+        team2: { goals: 0, subs: 0 }
+      };
+
+      const statsDiv = document.createElement('div');
+      statsDiv.classList.add('stats');
+
+      function createTeamColumn(team, label) {
+        const col = document.createElement('div');
+        col.style.textAlign = 'center';
+        col.innerHTML = `
+          <div style="font-size: 1.2rem; font-weight: bold;">${label}</div>
+          <div>Goals: ${teamStats[team].goals}</div>
+          <div>Subs: ${teamStats[team].subs} / ${subsAllowed}</div>
+        `;
+        return col;
+      }
+      statsDiv.appendChild(createTeamColumn('team1', team1Name));
+      statsDiv.appendChild(createTeamColumn('team2', team2Name));
+      fieldsDiv.appendChild(statsDiv);
     }
+
   </script>
 </body>
 </html>
