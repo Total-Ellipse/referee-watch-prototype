@@ -142,10 +142,10 @@
     const editIndicator = document.getElementById('editIndicator');
     const modeHeader = document.getElementById('mode');
     updateMode();
-    
-    let timerIntervalId = null;
-    let isPaused = false;
+
     let timeRemaining = 0; // will be initialized in firstHalf()
+    let section = '1st Half'
+    let firstHalfTimer = null;
     
     const teamStats = {
         team1: { goals: 0, subs: 0 },
@@ -161,7 +161,7 @@
     }
 
     function renderFields() {
-      if (mode === '1st Half') {
+      if (mode === 'Game') {
         firstHalf();
         return; // exit renderFields()
       }
@@ -259,7 +259,11 @@
     }
 
     function updateMode() {
-      modeHeader.innerText = mode;
+      if (mode !== 'Game') {
+        modeHeader.innerText = mode;
+      } else {
+        modeHeader.innerText = section;
+      }
       selectedIndex = 0;
       renderFields();
     }
@@ -282,6 +286,7 @@
           if (isEditMode && !justEnteredEditMode) {
             nextSelection();
           }
+          break;
         case 'Team Setup':
           clearTimeout(holdTimeout);
           if (isEditMode && !justEnteredEditMode) {
@@ -289,7 +294,7 @@
           }
           justEnteredEditMode = false;
           break;
-        case '1st Half':
+        case 'Game':
           if (pendingAdjustment) {
             applyStatChange(1, 'goals', pendingAdjustment === 'increase' ? 1 : -1);
             pendingAdjustment = null;
@@ -306,7 +311,7 @@
         case 'Team Setup':
           increaseValue();
           break;
-        case '1st Half':
+        case 'Game':
           if (!pendingAdjustment) {
             pendingAdjustment = 'increase'
           } else {
@@ -325,7 +330,7 @@
         case 'Team Setup':
           decreaseValue();
           break;
-        case '1st Half':
+        case 'Game':
           if (!pendingAdjustment) {
             pendingAdjustment = 'decrease'
           } else {
@@ -343,7 +348,7 @@
             mode = 'Game Setup';
             updateMode();
             break;
-          case '1st Half':
+          case 'Game':
             if (pendingAdjustment) {
               applyStatChange(1, 'subs', pendingAdjustment === 'increase' ? 1 : -1);
               pendingAdjustment = null;
@@ -362,56 +367,89 @@
 
     document.getElementById('btnE').addEventListener('click', () => {
       if (!isEditMode) {
-        if (mode === '1st Half') {
-        isPaused = !isPaused;
-        } else {
-          switch (mode) {
-            case 'Game Setup':
-              mode = 'Team Setup';
-              updateMode();
-              break;
-            case 'Team Setup':
-              mode = '1st Half';
-              updateMode();
-              break;
-            default:
-              alert('invalid mode');
-              break;
-          }
+        switch (mode) {
+          case 'Game Setup':
+            mode = 'Team Setup';
+            updateMode();
+            break;
+          case 'Team Setup':
+            mode = 'Game';
+            updateMode();
+            break;
+          case 'Game':
+            if (firstHalfTimer.isPaused() === true) {
+              firstHalfTimer.resume();
+            } else {
+              firstHalfTimer.pause();
+            }
+            break;
+          default:
+            alert('invalid mode');
+            break;
         }
       }
     });
-    
+
+    function startTimer(durationInSeconds, parentElement, onEndCallback) {
+        if (!onEndCallback) onEndCallback = function () {};
+
+        const timerDiv = document.createElement('div');
+        timerDiv.classList.add('timer');
+        parentElement.appendChild(timerDiv);
+
+        let remaining = durationInSeconds;
+        let paused = false;
+        let intervalId = null;
+
+        function updateDisplay() {
+            const minutes = Math.floor(remaining / 60).toString().padStart(2, '0');
+            const seconds = (remaining % 60).toString().padStart(2, '0');
+            timerDiv.textContent = minutes + ':' + seconds;
+        }
+
+        function tick() {
+            if (!paused && remaining > 0) {
+                remaining--;
+                updateDisplay();
+            } else if (remaining <= 0) {
+                clearInterval(intervalId);
+                timerDiv.textContent = '00:00';
+                onEndCallback();
+            }
+        }
+
+        updateDisplay();
+        intervalId = setInterval(tick, 1000);
+
+        return {
+            stop: function () {
+                clearInterval(intervalId);
+            },
+            pause: function () {
+                paused = true;
+            },
+            resume: function () {
+                paused = false;
+            },
+            element: timerDiv,
+            getTimeLeft: function () {
+                return remaining;
+            },
+            isPaused: function () {
+                return paused;
+            }
+        };
+    }
+
     function firstHalf() {
       fieldsDiv.innerHTML = '';
       const halfLengthMin = gameFields.find(f => f.key === 'halfLength').value;    
       timeRemaining = halfLengthMin * 60; // seconds
 
       // Create timer display
-      const timerDiv = document.createElement('div');
-      timerDiv.classList.add('timer');
-      fieldsDiv.appendChild(timerDiv);
-
-      function updateTimer() {
-        const minutes = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
-        const seconds = (timeRemaining % 60).toString().padStart(2, '0');
-        timerDiv.textContent = `${minutes}:${seconds}`;
-        if (isPaused) {
-          timerDiv.textContent += ' (Paused)';
-        }
-      }
-
-      updateTimer();
-
-      timerIntervalId = setInterval(() => {
-        if (!isPaused && timeRemaining > 0) {
-          timeRemaining--;
-          updateTimer();
-        } else if (timeRemaining <= 0) {
-          clearInterval(timerIntervalId);
-          timerDiv.textContent = '00:00';
-        }
-      }, 1000);
+      firstHalfTimer = startTimer(timeRemaining, fieldsDiv, function () {
+        alert("1st Half Over!");
+      });
       renderStats();
     }
     
