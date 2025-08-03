@@ -128,6 +128,19 @@
       { label: 'Team 1 Color', key: 'team1Color', value: 'Red', type: 'color' },
       { label: 'Team 2 Color', key: 'team2Color', value: 'Blue', type: 'color' }
     ];
+    
+    let sectionEnd = false;
+    function endSection() {
+      sectionEnd = true;
+    }
+    
+    const sectionInfo = [
+      { name: '1st Half', time: gameFields[0].value, endFunction: endSection },
+      { name: 'Halftime', time: gameFields[1].value, endFunction: endSection },
+      { name: '2nd Half', time: gameFields[0].value, endFunction: endSection },
+      { name: '1st Overtime', time: gameFields[5].value, endFunction: endSection },
+      { name: '2nd Overtime', time: gameFields[5].value, endFunction: endGame }
+    ];
 
     const colorOptions = ['Red', 'Blue', 'Green', 'Yellow', 'Black', 'White'];
     const charOptions = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split('');
@@ -144,8 +157,8 @@
     updateMode();
 
     let timeRemaining = 0; // will be initialized in firstHalf()
-    let section = '1st Half'
-    let firstHalfTimer = null;
+    let section = '1st Half';
+    let gameTimer = null;
     
     const teamStats = {
         team1: { goals: 0, subs: 0 },
@@ -377,10 +390,13 @@
             updateMode();
             break;
           case 'Game':
-            if (firstHalfTimer.isPaused() === true) {
-              firstHalfTimer.resume();
+            if (sectionEnd) {
+              sectionEnd = false
+              nextSection();
+            } else if (gameTimer.isPaused() === true) {
+              gameTimer.resume();
             } else {
-              firstHalfTimer.pause();
+              gameTimer.pause();
             }
             break;
           default:
@@ -443,12 +459,12 @@
 
     function firstHalf() {
       fieldsDiv.innerHTML = '';
-      const halfLengthMin = gameFields.find(f => f.key === 'halfLength').value;    
+      const halfLengthMin = gameFields[0].value;
       timeRemaining = halfLengthMin * 60; // seconds
 
       // Create timer display
-      firstHalfTimer = startTimer(timeRemaining, fieldsDiv, function () {
-        alert("1st Half Over!");
+      gameTimer = startTimer(timeRemaining, fieldsDiv, function () {
+        sectionEnd = true;
       });
       renderStats();
     }
@@ -488,6 +504,14 @@
         }
       }
       renderStats();
+    }
+    
+    function nextSection(name, minutes, endFunction) {
+      alert('Next Section');
+    }
+    
+    function endGame() {
+      alert('Game Over');
     }
 
   </script>
