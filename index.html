@@ -114,11 +114,11 @@
 
   <script>
     const gameFields = [
-      { label: 'Half Length', key: 'halfLength', value: 45, type: 'number' },
-      { label: 'Halftime Length', key: 'halftimeLength', value: 15, type: 'number' },
+      { label: 'Half Length', key: 'halfLength', value: 1, type: 'number' },
+      { label: 'Halftime Length', key: 'halftimeLength', value: 1, type: 'number' },
       { label: 'Substitution Limit', key: 'subs', value: 5, type: 'number' },
       { label: 'Enable Overtime', key: 'overtime', value: false, type: 'boolean' },
-      { label: 'Overtime Length', key: 'overtimeLength', value: 15, type: 'number' },
+      { label: 'Overtime Length', key: 'overtimeLength', value: 1, type: 'number' },
       { label: 'Enable Penalty Shootout', key: 'penaltyShootout', value: false, type: 'boolean' }
     ];
 
@@ -132,17 +132,18 @@
     let sectionEnd = false;
     function endSection() {
       sectionEnd = true;
+      alert('Section Over');
     }
-    
     const sectionInfo = [
-      { name: '1st Half', time: gameFields[0].value, endFunction: endSection },
-      { name: 'Halftime', time: gameFields[1].value, endFunction: endSection },
-      { name: '2nd Half', time: gameFields[0].value, endFunction: endSection },
-      { name: '1st Overtime', time: gameFields[5].value, endFunction: endSection },
-      { name: '2nd Overtime', time: gameFields[5].value, endFunction: endGame }
+      { name: '1st Half', minutes: gameFields[0].value, endFunction: endSection },
+      { name: 'Halftime', minutes: gameFields[1].value, endFunction: endSection },
+      { name: '2nd Half', minutes: gameFields[0].value, endFunction: endSection },
+      { name: '1st Overtime', minutes: gameFields[4].value, endFunction: endSection },
+      { name: '2nd Overtime', minutes: gameFields[4].value, endFunction: endGame }
     ];
+    sectionIndex = 0
 
-    const colorOptions = ['Red', 'Blue', 'Green', 'Yellow', 'Black', 'White'];
+    const colorOptions = ['Red', 'Blue', 'Green', 'Yellow', 'Black', 'White', 'Pink'];
     const charOptions = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split('');
 
     let mode = 'Game Setup';
@@ -156,8 +157,7 @@
     const modeHeader = document.getElementById('mode');
     updateMode();
 
-    let timeRemaining = 0; // will be initialized in firstHalf()
-    let section = '1st Half';
+    let timeRemaining = 0;
     let gameTimer = null;
     
     const teamStats = {
@@ -175,7 +175,15 @@
 
     function renderFields() {
       if (mode === 'Game') {
-        firstHalf();
+        sectionInfo[0].minutes = gameFields[0].value;
+        sectionInfo[1].minutes = gameFields[1].value;
+        sectionInfo[2].minutes = gameFields[0].value;
+        sectionInfo[3].minutes = gameFields[4].value;
+        sectionInfo[4].minutes = gameFields[4].value;
+        
+        nextSection(sectionInfo[sectionIndex].name,
+        sectionInfo[sectionIndex].minutes,
+        sectionInfo[sectionIndex].endFunction);
         return; // exit renderFields()
       }
       const fields = getCurrentFields();
@@ -274,9 +282,7 @@
     function updateMode() {
       if (mode !== 'Game') {
         modeHeader.innerText = mode;
-      } else {
-        modeHeader.innerText = section;
-      }
+      } 
       selectedIndex = 0;
       renderFields();
     }
@@ -299,6 +305,7 @@
           if (isEditMode && !justEnteredEditMode) {
             nextSelection();
           }
+          justEnteredEditMode = false;
           break;
         case 'Team Setup':
           clearTimeout(holdTimeout);
@@ -392,7 +399,9 @@
           case 'Game':
             if (sectionEnd) {
               sectionEnd = false
-              nextSection();
+              nextSection(sectionInfo[sectionIndex].name,
+              sectionInfo[sectionIndex].minutes,
+              sectionInfo[sectionIndex].endFunction);
             } else if (gameTimer.isPaused() === true) {
               gameTimer.resume();
             } else {
@@ -457,17 +466,6 @@
         };
     }
 
-    function firstHalf() {
-      fieldsDiv.innerHTML = '';
-      const halfLengthMin = gameFields[0].value;
-      timeRemaining = halfLengthMin * 60; // seconds
-
-      // Create timer display
-      gameTimer = startTimer(timeRemaining, fieldsDiv, function () {
-        sectionEnd = true;
-      });
-      renderStats();
-    }
     
     function renderStats() {
       const team1Name = teamFields.find(f => f.key === 'team1Abbrev').value.join('');
@@ -507,7 +505,13 @@
     }
     
     function nextSection(name, minutes, endFunction) {
-      alert('Next Section');
+      sectionEnd = false
+      sectionIndex++;
+      modeHeader.innerText = name;
+      fieldsDiv.innerHTML = '';
+      timeRemaining = minutes * 60; // seconds
+      gameTimer = startTimer(timeRemaining, fieldsDiv, endFunction);
+      renderStats();
     }
     
     function endGame() {
