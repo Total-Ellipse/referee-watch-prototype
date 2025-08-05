@@ -132,7 +132,7 @@
     let sectionEnd = false;
     function endSection() {
       sectionEnd = true;
-      alert('Section Over');
+//      alert('Section Over');
     }
     const sectionInfo = [
       { name: '1st Half', minutes: gameFields[0].value, endFunction: endSection },
@@ -384,8 +384,18 @@
          }
       }
     });
-
-    document.getElementById('btnE').addEventListener('click', () => {
+    
+    document.getElementById('btnE').addEventListener('mousedown', () => {
+      if (mode === 'Game') {
+        holdTimeout = setTimeout(() => {
+          nextSection(sectionInfo[sectionIndex].name,
+          sectionInfo[sectionIndex].minutes,
+          sectionInfo[sectionIndex].endFunction);
+        }, 1400);
+      }
+    });
+    
+    document.getElementById('btnE').addEventListener('mouseup', () => {
       if (!isEditMode) {
         switch (mode) {
           case 'Game Setup':
@@ -397,6 +407,7 @@
             updateMode();
             break;
           case 'Game':
+            clearTimeout(holdTimeout);
             if (sectionEnd) {
               sectionEnd = false
               nextSection(sectionInfo[sectionIndex].name,
@@ -505,13 +516,18 @@
     }
     
     function nextSection(name, minutes, endFunction) {
-      sectionEnd = false
-      sectionIndex++;
-      modeHeader.innerText = name;
-      fieldsDiv.innerHTML = '';
-      timeRemaining = minutes * 60; // seconds
-      gameTimer = startTimer(timeRemaining, fieldsDiv, endFunction);
-      renderStats();
+      if (sectionIndex >= 3 && (gameFields[3].value === false || 
+      teamStats.team1.goals !== teamStats.team2.goals)) {
+        endGame();
+      } else {  
+        sectionEnd = false;
+        sectionIndex++;
+        modeHeader.innerText = name;
+        fieldsDiv.innerHTML = '';
+        timeRemaining = minutes * 60; // seconds
+        gameTimer = startTimer(timeRemaining, fieldsDiv, endFunction);
+        renderStats();
+      }
     }
     
     function endGame() {
