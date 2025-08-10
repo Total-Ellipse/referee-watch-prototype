@@ -117,7 +117,7 @@
       { label: 'Half Length', key: 'halfLength', value: 1, type: 'number' },
       { label: 'Halftime Length', key: 'halftimeLength', value: 1, type: 'number' },
       { label: 'Substitution Limit', key: 'subs', value: 5, type: 'number' },
-      { label: 'Enable Overtime', key: 'overtime', value: false, type: 'boolean' },
+      { label: 'Enable Overtime', key: 'overtime', value: true, type: 'boolean' },
       { label: 'Overtime Length', key: 'overtimeLength', value: 1, type: 'number' },
       { label: 'Enable Penalty Shootout', key: 'penaltyShootout', value: false, type: 'boolean' }
     ];
@@ -142,6 +142,17 @@
       { name: '2nd Overtime', minutes: gameFields[4].value, endFunction: endGame }
     ];
     sectionIndex = 0
+    
+    const cardReports = [];
+    const cardReasons = ['RFOUL', 'DGPLY', 'DOGSO', 'UNBHV', 'VIOLC', 'CFOUL', 'DELAY', 'TRICK', 'XCELB', 'HANDG', '2CARD', 'OTHER'];
+    
+    let cardFields = [
+      { label: 'Card Color', key: 'color', value: 'Yellow', type: 'colorOption' },
+      { label: 'Team', key: 'team', value: teamFields[0].value.join(''), type: 'teamName' },
+      { label: 'Player Number', key: 'playerNum', value: 10, type: 'number' },
+      { label: 'Reason', key: 'reason', value: cardReasons[0], type: 'reason' }
+    ];
+
 
     const colorOptions = ['Red', 'Blue', 'Green', 'Yellow', 'Black', 'White', 'Pink'];
     const charOptions = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split('');
@@ -186,6 +197,18 @@
         sectionInfo[sectionIndex].endFunction);
         return; // exit renderFields()
       }
+      if (mode === 'Card Reporting') {
+        gameTimer.pause();
+        fieldsDiv.innerHTML = '';
+        cardFields.forEach((field, index) => {
+          const div = document.createElement('div');
+          div.className = 'field';
+          const flashClass = (index === selectedIndex) ? 'flash' : '';
+          div.innerHTML = `${field.label}: <span class="field-value ${flashClass}">${field.value}</span>`;
+          fieldsDiv.appendChild(div);
+        });
+        return; // exit renderFields()
+      }
       const fields = getCurrentFields();
       fieldsDiv.innerHTML = '';
       fields.forEach((field, index) => {
@@ -224,8 +247,23 @@
     }
 
     function increaseValue() {
+      if (mode === 'Card Reporting') {
+        const field = cardFields[selectedIndex];
+        if (field.type === 'colorOption') {
+          field.value = field.value === 'Yellow' ? 'Red' : 'Yellow';
+        } else if (field.type === 'teamName') {
+          field.value = field.value === teamFields[0].value.join('') ? teamFields[1].value.join('') : teamFields[0].value.join('');
+        } else if (field.type === 'number') {
+          field.value++;
+        } else if (field.type === 'reason') {
+          let idx = cardReasons.indexOf(field.value);
+          field.value = cardReasons[(idx + 1) % cardReasons.length];
+        }
+        renderFields();
+        return; // exit increaseValue()
+      }
+      
       const field = getCurrentFields()[selectedIndex];
-
       if (field.type === 'number') {
         field.value += 1;
       } else if (field.type === 'boolean') {
@@ -244,8 +282,24 @@
     }
 
     function decreaseValue() {
-      const field = getCurrentFields()[selectedIndex];
+      if (mode === 'Card Reporting') {
+        const field = cardFields[selectedIndex];
+        if (field.type === 'colorOption') {
+          field.value = field.value === 'Yellow' ? 'Red' : 'Yellow';
+        } else if (field.type === 'teamName') {
+          field.value = field.value === teamFields[0].value.join('') ?
+          teamFields[1].value.join('') : teamFields[0].value.join('');
+        } else if (field.type === 'number') {
+          if (field.value > 1) field.value--;
+        } else if (field.type === 'reason') {
+          let idx = cardReasons.indexOf(field.value);
+          field.value = cardReasons[(idx - 1 + cardReasons.length) % cardReasons.length];
+        }
+        renderFields();
+        return; // exit decreaseValue()
+      }
 
+      const field = getCurrentFields()[selectedIndex];
       if (field.type === 'number') {
         if (field.value > 0) field.value -= 1;
       } else if (field.type === 'boolean') {
@@ -282,7 +336,10 @@
     function updateMode() {
       if (mode !== 'Game') {
         modeHeader.innerText = mode;
-      } 
+      }
+      if (mode === 'Card Reporting') {
+        cardFields[1].value = teamFields[0].value.join('');
+      }
       selectedIndex = 0;
       renderFields();
     }
@@ -320,6 +377,10 @@
             pendingAdjustment = null;
           }
           break;
+        case 'Card Reporting':
+          selectedIndex = (selectedIndex + 1) % cardFields.length;
+          renderFields();
+          break;
       }
     });
 
@@ -338,6 +399,9 @@
             applyStatChange(2, 'goals', pendingAdjustment === 'increase' ? 1 : -1);
             pendingAdjustment = null;
           }
+          break;
+        case 'Card Reporting':
+          increaseValue();
           break;
       }
     });
@@ -358,31 +422,39 @@
             pendingAdjustment = null;
           }
           break;
+        case 'Card Reporting':
+          decreaseValue();
+          break;
       }
     });
 
     document.getElementById('btnC').addEventListener('click', () => {
-      if (!isEditMode) {
-        switch (mode) {
-          case 'Team Setup':
+      switch (mode) {
+        case 'Team Setup':
+          if (!isEditMode) {
             mode = 'Game Setup';
             updateMode();
-            break;
-          case 'Game':
-            if (pendingAdjustment) {
-              applyStatChange(1, 'subs', pendingAdjustment === 'increase' ? 1 : -1);
-              pendingAdjustment = null;
-            } else {
-              mode = 'Team Setup';
-              updateMode();
-              pendingAdjustment = null;
-            }
-            break;
-          default:
-            alert('invalid mode');
-            break;
-         }
-      }
+          }
+          break;
+        case 'Game':
+          if (pendingAdjustment) {
+            applyStatChange(1, 'subs', pendingAdjustment === 'increase' ? 1 : -1);
+            pendingAdjustment = null;
+          } else {
+            mode = 'Card Reporting';
+            selectedIndex = 0;
+            isEditMode = true;
+            updateMode();
+          }
+          break;
+        case 'Card Reporting':
+          mode = 'Game';
+          renderGameScreen();
+          break;
+        default:
+          alert('invalid mode');
+          break;
+       }
     });
     
     document.getElementById('btnE').addEventListener('mousedown', () => {
@@ -396,33 +468,46 @@
     });
     
     document.getElementById('btnE').addEventListener('mouseup', () => {
-      if (!isEditMode) {
-        switch (mode) {
-          case 'Game Setup':
+      switch (mode) {
+        case 'Game Setup':
+          if (!isEditMode) {
             mode = 'Team Setup';
             updateMode();
-            break;
-          case 'Team Setup':
+          }
+          break;
+        case 'Team Setup':
+          if (!isEditMode) {
             mode = 'Game';
             updateMode();
-            break;
-          case 'Game':
-            clearTimeout(holdTimeout);
-            if (sectionEnd) {
-              sectionEnd = false
-              nextSection(sectionInfo[sectionIndex].name,
-              sectionInfo[sectionIndex].minutes,
-              sectionInfo[sectionIndex].endFunction);
-            } else if (gameTimer.isPaused() === true) {
-              gameTimer.resume();
-            } else {
-              gameTimer.pause();
-            }
-            break;
-          default:
-            alert('invalid mode');
-            break;
-        }
+          }
+          break;
+        case 'Game':
+          clearTimeout(holdTimeout);
+          if (sectionEnd) {
+            sectionEnd = false
+            nextSection(sectionInfo[sectionIndex].name,
+            sectionInfo[sectionIndex].minutes,
+            sectionInfo[sectionIndex].endFunction);
+          } else if (gameTimer.isPaused() === true) {
+            gameTimer.resume();
+          } else {
+            gameTimer.pause();
+          }
+          break;
+        case 'Card Reporting':
+          cardReports.push({
+            color: cardFields[0].value,
+            team: cardFields[1].value,
+            playerNum: cardFields[2].value,
+            reason: cardFields[3].value
+          });
+          alert('Card saved:' + cardReports[cardReports.length - 1]);
+          mode = 'Game';
+          renderGameScreen();
+          break;
+        default:
+          alert('invalid mode');
+          break;
       }
     });
 
@@ -516,7 +601,7 @@
     }
     
     function nextSection(name, minutes, endFunction) {
-      if (sectionIndex >= 3 && (gameFields[3].value === false || 
+      if (sectionIndex === 3 && (gameFields[3].value === false || 
       teamStats.team1.goals !== teamStats.team2.goals)) {
         endGame();
       } else {  
@@ -533,6 +618,14 @@
     function endGame() {
       alert('Game Over');
     }
+    function renderGameScreen() {
+      fieldsDiv.innerHTML = '';
+      fieldsDiv.appendChild(gameTimer.element);
+      renderStats();
+      modeHeader.innerText = sectionInfo[sectionIndex - 1].name;
+      gameTimer.resume();
+    }
+
 
   </script>
 </body>
