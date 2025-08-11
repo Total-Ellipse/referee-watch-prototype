@@ -94,7 +94,18 @@
       font-size: 2rem;
       text-align: center;
       margin: 20px 0;
-    }      
+    }
+    
+    .card-header {
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    
+    .cards {
+      font-size: 1rem;
+      margin-top: 4px;
+    }
+    
   </style>
 </head>
 <body>
@@ -154,7 +165,7 @@
     ];
 
 
-    const colorOptions = ['Red', 'Blue', 'Green', 'Yellow', 'Black', 'White', 'Pink'];
+    const colorOptions = ['Red', 'Blue', 'Green', 'Yellow', 'Black', 'White', 'Purple'];
     const charOptions = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split('');
 
     let mode = 'Game Setup';
@@ -588,8 +599,8 @@
 
     
     function renderStats() {
-      const team1Name = teamFields.find(f => f.key === 'team1Abbrev').value.join('');
-      const team2Name = teamFields.find(f => f.key === 'team2Abbrev').value.join('');
+      const team1Name = teamFields[0].value.join('');
+      const team2Name = teamFields[1].value.join('');
       statsDiv.innerHTML = '';
       statsDiv.appendChild(createTeamColumn('team1', team1Name));
       statsDiv.appendChild(createTeamColumn('team2', team2Name));
@@ -597,7 +608,7 @@
     }
       
     function createTeamColumn(team, label) {
-      const subsAllowed = gameFields.find(f => f.key === 'subs').value;
+      const subsAllowed = gameFields[2].value;
       const col = document.createElement('div');
       col.style.textAlign = 'center';
       col.innerHTML = `
@@ -640,8 +651,51 @@
     }
     
     function endGame() {
-      alert('Game Over');
+      modeHeader.innerText = 'Game Summary';
+      fieldsDiv.innerHTML = '';
+      const team1Name = teamFields[0].value.join('');
+      const team2Name = teamFields[1].value.join('');
+
+      const summaryContainer = document.createElement('div');
+      summaryContainer.style.display = 'grid';
+      summaryContainer.style.gridTemplateColumns = '1fr 1fr';
+      summaryContainer.style.gap = '20px';
+      summaryContainer.style.marginBottom = '20px';
+
+      function makeTeamColumn(name, goals) {
+        const col = document.createElement('div');
+        col.style.textAlign = 'center';
+        col.innerHTML = `
+          <div style="font-weight: bold; font-size: 1.2rem;">${name}</div>
+          <div style="font-size: 2.5rem; font-weight: bold;">${goals}</div>
+        `;
+        return col;
+      }
+
+      summaryContainer.appendChild(makeTeamColumn(team1Name, teamStats.team1.goals));
+      summaryContainer.appendChild(makeTeamColumn(team2Name, teamStats.team2.goals));
+      fieldsDiv.appendChild(summaryContainer);
+
+      if (cardReports.length > 0) {
+        const cardsHeader = document.createElement('div');
+        cardsHeader.classList.add('card-header');
+        cardsHeader.innerText = 'Cards:';
+        fieldsDiv.appendChild(cardsHeader);
+        cardReports.forEach((card, index) => {
+          const cardDiv = document.createElement('div');
+          cardDiv.classList.add('cards');
+          cardDiv.innerText =
+            `${index + 1}. ${card.color} Card | Team ${card.team} | #${card.playerNum} | ${card.reason}`;
+          fieldsDiv.appendChild(cardDiv);
+        });
+      } else {
+        const noCards = document.createElement('div');
+        noCards.classList.add('cards');
+        noCards.innerText = 'No cards reported.';
+        fieldsDiv.appendChild(noCards);
+      }
     }
+
     function renderGameScreen() {
       fieldsDiv.innerHTML = '';
       fieldsDiv.appendChild(gameTimer.element);
