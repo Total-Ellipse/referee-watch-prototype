@@ -106,6 +106,13 @@
       margin-top: 4px;
     }
     
+    .summary {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
   </style>
 </head>
 <body>
@@ -125,32 +132,31 @@
 
   <script>
     const gameFields = [
-      { label: 'Half Length', key: 'halfLength', value: 1, type: 'number' },
-      { label: 'Halftime Length', key: 'halftimeLength', value: 1, type: 'number' },
-      { label: 'Substitution Limit', key: 'subs', value: 5, type: 'number' },
-      { label: 'Enable Overtime', key: 'overtime', value: true, type: 'boolean' },
-      { label: 'Overtime Length', key: 'overtimeLength', value: 1, type: 'number' },
-      { label: 'Enable Penalty Shootout', key: 'penaltyShootout', value: false, type: 'boolean' }
+      { label: 'Half Length', value: 1, type: 'number' },
+      { label: 'Halftime Length', value: 1, type: 'number' },
+      { label: 'Substitution Limit', value: 5, type: 'number' },
+      { label: 'Enable Overtime', value: true, type: 'boolean' },
+      { label: 'Overtime Length', value: 1, type: 'number' },
     ];
 
     const teamFields = [
-      { label: 'Team 1 Abbrev', key: 'team1Abbrev', value: ['T', 'M', '1'], type: 'abbrev', charIndex: 0 },
-      { label: 'Team 2 Abbrev', key: 'team2Abbrev', value: ['T', 'M', '2'], type: 'abbrev', charIndex: 0 },
-      { label: 'Team 1 Color', key: 'team1Color', value: 'Red', type: 'color' },
-      { label: 'Team 2 Color', key: 'team2Color', value: 'Blue', type: 'color' }
+      { label: 'Team 1 Abbrev', value: ['T', 'M', '1'], type: 'abbrev', charIndex: 0 },
+      { label: 'Team 2 Abbrev', value: ['T', 'M', '2'], type: 'abbrev', charIndex: 0 },
+      { label: 'Team 1 Color', value: 'Red', type: 'color' },
+      { label: 'Team 2 Color', value: 'Blue', type: 'color' }
     ];
     
     let sectionEnd = false;
     function endSection() {
       sectionEnd = true;
-//      alert('Section Over');
     }
     const sectionInfo = [
       { name: '1st Half', minutes: gameFields[0].value, endFunction: endSection },
       { name: 'Halftime', minutes: gameFields[1].value, endFunction: endSection },
       { name: '2nd Half', minutes: gameFields[0].value, endFunction: endSection },
       { name: '1st Overtime', minutes: gameFields[4].value, endFunction: endSection },
-      { name: '2nd Overtime', minutes: gameFields[4].value, endFunction: endGame }
+      { name: '2nd Overtime', minutes: gameFields[4].value, endFunction: endGame},
+      { name: 'Game Summary', minutes: 0, endFunction: endGame}
     ];
     sectionIndex = 0
     
@@ -158,10 +164,10 @@
     const cardReasons = ['RFOUL', 'DGPLY', 'DOGSO', 'UNBHV', 'VIOLC', 'CFOUL', 'DELAY', 'TRICK', 'XCELB', 'HANDG', '2CARD', 'OTHER'];
     
     let cardFields = [
-      { label: 'Card Color', key: 'color', value: 'Yellow', type: 'colorOption' },
-      { label: 'Team', key: 'team', value: teamFields[0].value.join(''), type: 'teamName' },
-      { label: 'Player Number', key: 'playerNum', value: 10, type: 'number' },
-      { label: 'Reason', key: 'reason', value: cardReasons[0], type: 'reason' }
+      { label: 'Card Color', value: 'Yellow', type: 'colorOption' },
+      { label: 'Team', value: teamFields[0].value.join(''), type: 'teamName' },
+      { label: 'Player Number', value: 10, type: 'number' },
+      { label: 'Reason', value: cardReasons[0], type: 'reason' }
     ];
 
 
@@ -619,18 +625,19 @@
     }
     
     function applyStatChange(team, type, amount) {
-      if (team === 1) {
-        if (type === 'goals') {
+      switch (team.toString() + type) {
+        case '1goals':
           teamStats.team1.goals = Math.max(0, teamStats.team1.goals + amount);
-        } else if (type === 'subs') {
+          break;
+        case '1subs':
           teamStats.team1.subs = Math.max(0, teamStats.team1.subs + amount);
-        }
-      } else if (team === 2) {
-        if (type === 'goals') {
+          break;
+        case '2goals':
           teamStats.team2.goals = Math.max(0, teamStats.team2.goals + amount);
-        } else if (type === 'subs') {
+          break;
+        case '2subs':
           teamStats.team2.subs = Math.max(0, teamStats.team2.subs + amount);
-        }
+          break;
       }
       renderStats();
     }
@@ -651,16 +658,14 @@
     }
     
     function endGame() {
+      mode = 'Game Summary';
       modeHeader.innerText = 'Game Summary';
       fieldsDiv.innerHTML = '';
       const team1Name = teamFields[0].value.join('');
       const team2Name = teamFields[1].value.join('');
 
       const summaryContainer = document.createElement('div');
-      summaryContainer.style.display = 'grid';
-      summaryContainer.style.gridTemplateColumns = '1fr 1fr';
-      summaryContainer.style.gap = '20px';
-      summaryContainer.style.marginBottom = '20px';
+      summaryContainer.classList.add('summary');
 
       function makeTeamColumn(name, goals) {
         const col = document.createElement('div');
@@ -681,11 +686,11 @@
         cardsHeader.classList.add('card-header');
         cardsHeader.innerText = 'Cards:';
         fieldsDiv.appendChild(cardsHeader);
-        cardReports.forEach((card, index) => {
+        cardReports.forEach((card) => {
           const cardDiv = document.createElement('div');
           cardDiv.classList.add('cards');
           cardDiv.innerText =
-            `${index + 1}. ${card.color} Card | Team ${card.team} | #${card.playerNum} | ${card.reason}`;
+            `${card.color} Card | Team ${card.team} | #${card.playerNum} | ${card.reason}`;
           fieldsDiv.appendChild(cardDiv);
         });
       } else {
