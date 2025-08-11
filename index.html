@@ -249,71 +249,95 @@
     function increaseValue() {
       if (mode === 'Card Reporting') {
         const field = cardFields[selectedIndex];
-        if (field.type === 'colorOption') {
-          field.value = field.value === 'Yellow' ? 'Red' : 'Yellow';
-        } else if (field.type === 'teamName') {
-          field.value = field.value === teamFields[0].value.join('') ? teamFields[1].value.join('') : teamFields[0].value.join('');
-        } else if (field.type === 'number') {
-          field.value++;
-        } else if (field.type === 'reason') {
-          let idx = cardReasons.indexOf(field.value);
-          field.value = cardReasons[(idx + 1) % cardReasons.length];
+        switch (field.type) {
+          case 'colorOption':
+            field.value = field.value === 'Yellow' ? 'Red' : 'Yellow';
+            break;
+          case 'teamName':
+            field.value = field.value === teamFields[0].value.join('') ?
+            teamFields[1].value.join('') : teamFields[0].value.join('');
+            break;
+          case 'number':
+            field.value++;
+            break;
+          case 'reason':
+            let idx = cardReasons.indexOf(field.value);
+            field.value = cardReasons[(idx + 1) % cardReasons.length];
+            break;
         }
         renderFields();
         return; // exit increaseValue()
       }
       
       const field = getCurrentFields()[selectedIndex];
-      if (field.type === 'number') {
-        field.value += 1;
-      } else if (field.type === 'boolean') {
-        field.value = !field.value;
-      } else if (field.type === 'color') {
-        const idx = colorOptions.indexOf(field.value);
-        field.value = colorOptions[(idx + 1) % colorOptions.length];
-      } else if (field.type === 'abbrev') {
-        const i = field.charIndex;
-        const currentChar = field.value[i];
-        const idx = charOptions.indexOf(currentChar);
-        field.value[i] = charOptions[(idx + 1) % charOptions.length];
+      switch (field.type) {
+        case 'number':
+          field.value++;
+          break;
+        case 'boolean':
+          field.value = !field.value;
+          break;
+        case 'color':
+          const colorIdx = colorOptions.indexOf(field.value);
+          field.value = colorOptions[(colorIdx + 1) % colorOptions.length];
+          break;
+        case 'abbrev':
+          const i = field.charIndex;
+          const currentChar = field.value[i];
+          const charIdx = charOptions.indexOf(currentChar);
+          field.value[i] = charOptions[(charIdx + 1) % charOptions.length];
+          break;
       }
-
       renderFields();
     }
 
     function decreaseValue() {
       if (mode === 'Card Reporting') {
         const field = cardFields[selectedIndex];
-        if (field.type === 'colorOption') {
-          field.value = field.value === 'Yellow' ? 'Red' : 'Yellow';
-        } else if (field.type === 'teamName') {
-          field.value = field.value === teamFields[0].value.join('') ?
-          teamFields[1].value.join('') : teamFields[0].value.join('');
-        } else if (field.type === 'number') {
-          if (field.value > 1) field.value--;
-        } else if (field.type === 'reason') {
-          let idx = cardReasons.indexOf(field.value);
-          field.value = cardReasons[(idx - 1 + cardReasons.length) % cardReasons.length];
+        switch (field.type) {
+          case 'colorOption':
+            field.value = field.value === 'Yellow' ? 'Red' : 'Yellow';
+            break;
+          case 'teamName':
+            field.value = field.value === teamFields[0].value.join('') ?
+            teamFields[1].value.join('') : teamFields[0].value.join('');
+            break;
+          case 'number':
+            if (field.value > 0) field.value--;
+            break;
+          case 'reason':
+            let idx = cardReasons.indexOf(field.value);
+            field.value = cardReasons[(idx - 1 + cardReasons.length) %
+            cardReasons.length];
+            break;
         }
         renderFields();
         return; // exit decreaseValue()
       }
 
       const field = getCurrentFields()[selectedIndex];
-      if (field.type === 'number') {
-        if (field.value > 0) field.value -= 1;
-      } else if (field.type === 'boolean') {
-        field.value = !field.value;
-      } else if (field.type === 'color') {
-        const idx = colorOptions.indexOf(field.value);
-        field.value = colorOptions[(idx - 1 + colorOptions.length) % colorOptions.length];
-      } else if (field.type === 'abbrev') {
-        const i = field.charIndex;
-        const currentChar = field.value[i];
-        const idx = charOptions.indexOf(currentChar);
-        field.value[i] = charOptions[(idx - 1 + charOptions.length) % charOptions.length];
+      switch (field.type) {
+        case 'number':
+          if (field.value > 1) {
+            field.value--;
+          }
+          break;
+        case 'boolean':
+          field.value = !field.value;
+          break;
+        case 'color':
+          const colorIdx = colorOptions.indexOf(field.value);
+          field.value = colorOptions[(colorIdx - 1 + colorOptions.length) %
+          colorOptions.length];
+          break;
+        case 'abbrev':
+          const i = field.charIndex;
+          const currentChar = field.value[i];
+          const charIdx = charOptions.indexOf(currentChar);
+          field.value[i] = charOptions[(charIdx - 1 + charOptions.length) %
+          charOptions.length];
+          break;
       }
-
       renderFields();
     }
 
