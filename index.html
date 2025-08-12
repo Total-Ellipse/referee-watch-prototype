@@ -96,6 +96,14 @@
       margin: 20px 0;
     }
     
+    .color-box {
+      display: inline-block;
+      width: 12px;
+      height: 15px;
+      margin-left: 3px;
+      border: 1px solid #ccc;
+    }
+    
     .card-header {
       font-weight: bold;
       margin-top: 10px;
@@ -145,7 +153,7 @@
       { label: 'Team 1 Color', value: 'Red', type: 'color' },
       { label: 'Team 2 Color', value: 'Blue', type: 'color' }
     ];
-    
+
     let sectionEnd = false;
     function endSection() {
       sectionEnd = true;
@@ -422,6 +430,9 @@
           selectedIndex = (selectedIndex + 1) % cardFields.length;
           renderFields();
           break;
+        default:
+          console.log('invalid mode for button A')
+          break;
       }
     });
 
@@ -444,6 +455,9 @@
         case 'Card Reporting':
           increaseValue();
           break;
+        default:
+          console.log('invalid mode for button B')
+          break;
       }
     });
 
@@ -465,6 +479,9 @@
           break;
         case 'Card Reporting':
           decreaseValue();
+          break;
+        default:
+          console.log('invalid mode for button D')
           break;
       }
     });
@@ -493,7 +510,7 @@
           renderGameScreen();
           break;
         default:
-          alert('invalid mode');
+          console.log('invalid mode for button C')
           break;
        }
     });
@@ -547,7 +564,7 @@
           renderGameScreen();
           break;
         default:
-          alert('invalid mode');
+          console.log('invalid mode for button E')
           break;
       }
     });
@@ -615,10 +632,13 @@
       
     function createTeamColumn(team, label) {
       const subsAllowed = gameFields[2].value;
+      let colorIndex = team === 'team1' ? 2 : 3;
       const col = document.createElement('div');
       col.style.textAlign = 'center';
       col.innerHTML = `
-        <div style="font-size: 1.2rem; font-weight: bold;">${label}</div>
+        <div style="font-size: 1.2rem; font-weight: bold;">${label}
+        <span class="color-box" style="background-color:
+        ${teamFields[colorIndex].value};"></span></div>
         <div>Goals: ${teamStats[team].goals}</div>
         <div>Subs: ${teamStats[team].subs} / ${subsAllowed}</div>`;
         return col;
@@ -669,9 +689,12 @@
 
       function makeTeamColumn(name, goals) {
         const col = document.createElement('div');
+        let colorIndex = name === team1Name ? 2 : 3;
         col.style.textAlign = 'center';
         col.innerHTML = `
-          <div style="font-weight: bold; font-size: 1.2rem;">${name}</div>
+          <div style="font-weight: bold; font-size: 1.2rem;">${name}
+          <span class="color-box" style="background-color:
+          ${teamFields[colorIndex].value};"></span></div>
           <div style="font-size: 2.5rem; font-weight: bold;">${goals}</div>
         `;
         return col;
