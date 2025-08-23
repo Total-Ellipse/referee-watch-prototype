@@ -175,10 +175,30 @@
       margin-bottom: 20px;
       font-size: 1.5rem;
     }
+    
+    #strapDiv {
+      position: absolute;
+      top: 0;
+      display: flex;
+      justify-content: center;
+      width: 100%;
+    }
+    
+    .strap {
+      position: absolute;
+      background: #000000;
+      width: 100px;
+      height: 60px;
+      top: 0;
+      margin: auto;
+      clip-path: polygon(0 0, 20% 0, 20% 33%, 80% 33%, 80% 0, 100% 0, 100% 66%, 78% 66%, 78% 100%, 22% 100%, 22% 66%, 0 66%);
+    }
 
   </style>
 </head>
 <body>
+  <div id="strapDiv">
+  </div>
   <div class="wrapper">
     <button class="btn" id="btnA">A</button>
     <button class="btn" id="btnB">B</button>
@@ -194,6 +214,16 @@
   </div>
 
   <script>
+    let strapDiv = document.getElementById('strapDiv');
+    let windowHeight = window.innerHeight;
+
+    for (let i = -42; i <= windowHeight; i += 42) {
+      const strap = document.createElement('div');
+      strap.classList.add('strap');
+      strap.style.top = `${i + 'px'}`;
+      strapDiv.appendChild(strap);
+    }
+    
     const gameFields = [
       { label: 'Half Length', value: 1, type: 'number' },
       { label: 'Halftime Length', value: 1, type: 'number' },
