@@ -23,7 +23,7 @@
         position: relative;
         background-color: #000000;
         border-radius: 20px;
-        width: 350px;
+        width: 360px;
         height: 400px;
         padding: 10px 20px 20px;
         box-sizing: border-box;
@@ -156,13 +156,13 @@
     .card-header {
       color: #ffffff;
       font-weight: bold;
-      font-size: 2rem;
+      font-size: 1.7rem;
       margin-top: 10px;
     }
     
     .cards {
       color: #ffffff;
-      font-size: 1.5rem;
+      font-size: 1.1rem;
       margin-top: 4px;
     }
     
@@ -243,12 +243,12 @@
       sectionEnd = true;
     }
     const sectionInfo = [
-      { name: '1st Half', minutes: gameFields[0].value, endFunction: endSection },
-      { name: 'Halftime', minutes: gameFields[1].value, endFunction: endSection },
-      { name: '2nd Half', minutes: gameFields[0].value, endFunction: endSection },
-      { name: '1st Overtime', minutes: gameFields[4].value, endFunction: endSection },
-      { name: '2nd Overtime', minutes: gameFields[4].value, endFunction: endGame},
-      { name: 'Game Summary', minutes: 0, endFunction: endGame}
+      { name: '1st Half', minutes: gameFields[0].value},
+      { name: 'Halftime', minutes: gameFields[1].value},
+      { name: '2nd Half', minutes: gameFields[0].value},
+      { name: '1st Overtime', minutes: gameFields[4].value},
+      { name: '2nd Overtime', minutes: gameFields[4].value},
+      { name: 'Game Summary', minutes: 0}
     ];
     sectionIndex = 0
     
@@ -302,8 +302,7 @@
         sectionInfo[4].minutes = gameFields[4].value;
         
         nextSection(sectionInfo[sectionIndex].name,
-        sectionInfo[sectionIndex].minutes,
-        sectionInfo[sectionIndex].endFunction);
+        sectionInfo[sectionIndex].minutes);
         return; // exit renderFields()
       }
       if (mode === 'Card Reporting') {
@@ -367,7 +366,7 @@
             teamFields[1].value.join('') : teamFields[0].value.join('');
             break;
           case 'number':
-            field.value++;
+            if (field.value < 99) field.value++;
             break;
           case 'reason':
             let idx = cardReasons.indexOf(field.value);
@@ -381,7 +380,7 @@
       const field = getCurrentFields()[selectedIndex];
       switch (field.type) {
         case 'number':
-          field.value++;
+          if (field.value < 99) field.value++;
           break;
         case 'boolean':
           field.value = !field.value;
@@ -514,8 +513,10 @@
           selectedIndex = (selectedIndex + 1) % cardFields.length;
           renderFields();
           break;
+        case 'Game Summary':
+          break;
         default:
-          console.log('invalid mode for button A')
+          console.log('invalid mode')
           break;
       }
     });
@@ -539,8 +540,10 @@
         case 'Card Reporting':
           increaseValue();
           break;
+        case 'Game Summary':
+          break;
         default:
-          console.log('invalid mode for button B')
+          console.log('invalid mode')
           break;
       }
     });
@@ -564,8 +567,10 @@
         case 'Card Reporting':
           decreaseValue();
           break;
+        case 'Game Summary':
+          break;
         default:
-          console.log('invalid mode for button D')
+          console.log('invalid mode')
           break;
       }
     });
@@ -577,6 +582,8 @@
             mode = 'Game Setup';
             updateMode();
           }
+          break;
+        case 'Game Setup':
           break;
         case 'Game':
           if (pendingAdjustment) {
@@ -593,8 +600,10 @@
           mode = 'Game';
           renderGameScreen();
           break;
+        case 'Game Summary':
+          break;
         default:
-          console.log('invalid mode for button C')
+          console.log('invalid mode')
           break;
        }
     });
@@ -603,8 +612,7 @@
       if (mode === 'Game') {
         holdTimeout = setTimeout(() => {
           nextSection(sectionInfo[sectionIndex].name,
-          sectionInfo[sectionIndex].minutes,
-          sectionInfo[sectionIndex].endFunction);
+          sectionInfo[sectionIndex].minutes);
         }, 1400);
       }
     });
@@ -628,8 +636,7 @@
           if (sectionEnd) {
             sectionEnd = false
             nextSection(sectionInfo[sectionIndex].name,
-            sectionInfo[sectionIndex].minutes,
-            sectionInfo[sectionIndex].endFunction);
+            sectionInfo[sectionIndex].minutes);
           } else if (gameTimer.isPaused() === true) {
             gameTimer.resume();
           } else {
@@ -647,8 +654,10 @@
           mode = 'Game';
           renderGameScreen();
           break;
+        case 'Game Summary':
+          break;
         default:
-          console.log('invalid mode for button E')
+          console.log('invalid mode')
           break;
       }
     });
@@ -746,10 +755,12 @@
       renderStats();
     }
     
-    function nextSection(name, minutes, endFunction) {
+    function nextSection(name, minutes) {
       pendingAdjustment = null;
       if (sectionIndex === 3 && (gameFields[3].value === false || 
       teamStats.team1.goals !== teamStats.team2.goals)) {
+        endGame();
+      } else if (sectionIndex === 5) {
         endGame();
       } else {  
         sectionEnd = false;
@@ -757,7 +768,7 @@
         modeHeader.innerText = name;
         fieldsDiv.innerHTML = '';
         timeRemaining = minutes * 60; // seconds
-        gameTimer = startTimer(timeRemaining, fieldsDiv, endFunction);
+        gameTimer = startTimer(timeRemaining, fieldsDiv, endSection);
         renderStats();
       }
     }
@@ -804,6 +815,7 @@
       } else {
         const noCards = document.createElement('div');
         noCards.classList.add('cards');
+        noCards.style.fontSize = '1.5rem';
         noCards.innerText = 'No cards reported.';
         fieldsDiv.appendChild(noCards);
       }
