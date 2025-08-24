@@ -12,6 +12,7 @@
       align-items: center;
       justify-content: center;
       height: 100vh;
+      overflow: hidden;
     }
 
     .wrapper {
@@ -97,11 +98,6 @@
       clip-path: polygon(0 0, 0 100%, 100% 80%, 100% 20%);
     }
 
-    #btnE {
-      clip-path: polygon(0 0, 100% 0, 80% 100%, 20% 100%);
-    }
-
-
     #btnA { top: 40px; left: -10px; transform: translateX(-100%);}
     #btnB { top: 40px; right: -10px; transform: translateX(100%);}
     #btnC { bottom: 40px; left: -10px; transform: translateX(-100%);}
@@ -112,6 +108,8 @@
       bottom: -50px;
       left: 50%;
       transform: translateX(-50%);
+      clip-path: polygon(0 0, 100% 0, 80% 100%, 20% 100%);
+      border: 3px solid #ffffff;
     }
     
     @keyframes flash {
@@ -148,16 +146,17 @@
     
     .color-box {
       display: inline-block;
-      width: 18px;
-      height: 22.5px;
+      width: 21px;
+      height: 27px;
       border-radius: 3px;
       margin-left: 3px;
-      border: 1px solid #ccc;
+      border: 1px solid #ffffff;
     }
     
     .card-header {
       color: #ffffff;
       font-weight: bold;
+      font-size: 2rem;
       margin-top: 10px;
     }
     
@@ -187,7 +186,7 @@
     .strap {
       position: absolute;
       background: #000000;
-      width: 100px;
+      width: 150px;
       height: 60px;
       top: 0;
       margin: auto;
@@ -217,7 +216,7 @@
     let strapDiv = document.getElementById('strapDiv');
     let windowHeight = window.innerHeight;
 
-    for (let i = -42; i <= windowHeight; i += 42) {
+    for (let i = -43; i <= windowHeight; i += 43) {
       const strap = document.createElement('div');
       strap.classList.add('strap');
       strap.style.top = `${i + 'px'}`;
@@ -721,7 +720,7 @@
       const col = document.createElement('div');
       col.style.textAlign = 'center';
       col.innerHTML = `
-        <div style="font-size: 2rem; font-weight: bold;">${label}
+        <div style="font-size: 2rem; font-weight: bold">${label}
         <span class="color-box" style="background-color:
         ${teamFields[colorIndex].value};"></span></div>
         <div style="margin-top: 15px">Goals: ${teamStats[team].goals}</div>
@@ -748,6 +747,7 @@
     }
     
     function nextSection(name, minutes, endFunction) {
+      pendingAdjustment = null;
       if (sectionIndex === 3 && (gameFields[3].value === false || 
       teamStats.team1.goals !== teamStats.team2.goals)) {
         endGame();
@@ -777,7 +777,7 @@
         let colorIndex = name === team1Name ? 2 : 3;
         col.style.textAlign = 'center';
         col.innerHTML = `
-          <div style="font-weight: bold; font-size: 2rem;">${name}
+          <div style="font-weight: bold; font-size: 2.5rem;">${name}
           <span class="color-box" style="background-color:
           ${teamFields[colorIndex].value};"></span></div>
           <div style="font-size: 4rem; font-weight: bold;">${goals}</div>
