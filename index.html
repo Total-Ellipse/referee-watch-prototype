@@ -238,10 +238,13 @@
       { label: 'Team 2 Color', value: 'Blue', type: 'color' }
     ];
 
+    const timerEndAlarm = new Audio('/watch-timer-alarm.mp3');
     let sectionEnd = false;
     function endSection() {
       sectionEnd = true;
+      timerEndAlarm.play();
     }
+    
     const sectionInfo = [
       { name: '1st Half', minutes: gameFields[0].value},
       { name: 'Halftime', minutes: gameFields[1].value},
