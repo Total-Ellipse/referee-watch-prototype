@@ -116,7 +116,8 @@
       clip-path: polygon(0 0, 100% 0, 80% 100%, 20% 100%);
       border: 3px solid #ffffff;
     }
-    
+
+/* flashing animation for selection */
     @keyframes flash {
       0%, 49% {
         opacity: 1;
@@ -187,7 +188,8 @@
       justify-content: center;
       width: 100%;
     }
-    
+
+/* watch strap segments */
     .strap {
       position: absolute;
       background: #000000;
@@ -220,7 +222,7 @@
   <script>
     let strapDiv = document.getElementById('strapDiv');
     let windowHeight = window.innerHeight;
-
+    // generate watch strap
     for (let i = -43; i <= windowHeight; i += 43) {
       const strap = document.createElement('div');
       strap.classList.add('strap');
@@ -229,11 +231,11 @@
     }
     
     const gameFields = [
-      { label: 'Half Length', value: 1, type: 'number' },
-      { label: 'Halftime Length', value: 1, type: 'number' },
+      { label: 'Half Length', value: 45, type: 'number' },
+      { label: 'Halftime Length', value: 15, type: 'number' },
       { label: 'Substitution Limit', value: 5, type: 'number' },
       { label: 'Enable Overtime', value: true, type: 'boolean' },
-      { label: 'Overtime Length', value: 1, type: 'number' },
+      { label: 'Overtime Length', value: 15, type: 'number' },
     ];
 
     const teamFields = [
@@ -302,7 +304,7 @@
     }
 
     function renderFields() {
-      if (mode === 'Game') {
+      if (mode === 'Game') { // Proceed to appropriate game section
         sectionInfo[0].minutes = gameFields[0].value;
         sectionInfo[1].minutes = gameFields[1].value;
         sectionInfo[2].minutes = gameFields[0].value;
@@ -316,8 +318,9 @@
       if (mode === 'Card Reporting') {
         gameTimer.pause();
         fieldsDiv.innerHTML = '';
-        cardFields.forEach((field, index) => {
-          const div = document.createElement('div');
+        
+        cardFields.forEach((field, index) => { // Display card fields
+        const div = document.createElement('div');
           div.className = 'field';
           const flashClass = (index === selectedIndex) ? 'flash' : '';
           div.innerHTML = `${field.label}: <span class="field-value ${flashClass}">${field.value}</span>`;
@@ -325,14 +328,17 @@
         });
         return; // exit renderFields()
       }
+      // If mode is Game Setup or Team Setup
       const fields = getCurrentFields();
       fieldsDiv.innerHTML = '';
-      fields.forEach((field, index) => {
+      fields.forEach((field, index) => { // Generate appropriate list of fields
         const div = document.createElement('div');
         div.className = 'field';
-        if (isEditMode && index === selectedIndex) div.classList.add('flash');
+        if (isEditMode && index === selectedIndex) { // Value being edited should flash
+          div.classList.add('flash');
+        }
         let valueDisplay = '';
-        if (field.type === 'abbrev') {
+        if (field.type === 'abbrev') { // Special case for team abbreviations
           valueDisplay = field.value.map((char, charIdx) => {
             const isSelectedChar = isEditMode &&
             index === selectedIndex && field.charIndex === charIdx;
@@ -343,19 +349,17 @@
           valueDisplay = field.value;
         }
         
-        if (field.type === 'abbrev') {
+        if (field.type === 'abbrev') { // Special case for team abbreviations
           div.innerHTML = `${field.label}: ${valueDisplay}`;
         } else {
           div.innerHTML = `${field.label}: 
           <span class="field-value${isEditMode && index === selectedIndex ?
           ' flash' : ''}">${valueDisplay}</span>`;
         }
-
-
-        fieldsDiv.appendChild(div);
+        fieldsDiv.appendChild(div); 
       });
       
-      if (isEditMode) {
+      if (isEditMode) { // edit indicator
         editIndicator.style.visibility = 'visible';
       } else {
         editIndicator.style.visibility = 'hidden';
@@ -363,7 +367,7 @@
     }
 
     function increaseValue() {
-      if (mode === 'Card Reporting') {
+      if (mode === 'Card Reporting') { // Special case for Card Reporting mode
         const field = cardFields[selectedIndex];
         switch (field.type) {
           case 'colorOption':
@@ -385,6 +389,7 @@
         return; // exit increaseValue()
       }
       
+      // Normal behavior in Game Setup and Team Setup
       const field = getCurrentFields()[selectedIndex];
       switch (field.type) {
         case 'number':
@@ -408,6 +413,7 @@
     }
 
     function decreaseValue() {
+    // Another special case for Card Reporting mode (is it obvious I added it last?)
       if (mode === 'Card Reporting') {
         const field = cardFields[selectedIndex];
         switch (field.type) {
@@ -431,6 +437,7 @@
         return; // exit decreaseValue()
       }
 
+      // Normal behavior in Game Setup and Team Setup
       const field = getCurrentFields()[selectedIndex];
       switch (field.type) {
         case 'number':
@@ -477,7 +484,7 @@
       if (mode !== 'Game') {
         modeHeader.innerText = mode;
       }
-      if (mode === 'Card Reporting') {
+      if (mode === 'Card Reporting') { // Another exception for Card Reporting :/
         cardFields[1].value = teamFields[0].value.join('');
       }
       selectedIndex = 0;
@@ -485,11 +492,13 @@
     }
 
     // Button logic
+    
+    // Button A hold logic
     document.getElementById('btnA').addEventListener('mousedown', () => {
       if (mode === 'Game Setup' || mode === 'Team Setup') {
         holdTimeout = setTimeout(() => {
           isEditMode = !isEditMode;
-          justEnteredEditMode = isEditMode; // only true when entering edit mode
+          justEnteredEditMode = isEditMode; // Only true when entering edit mode
           renderFields();
         }, 700);
       }
@@ -498,27 +507,27 @@
     document.getElementById('btnA').addEventListener('mouseup', () => {
       switch (mode) {
         case 'Game Setup':
-          clearTimeout(holdTimeout);
+          clearTimeout(holdTimeout); // Cancel action because A wasn't held for long enough
           if (isEditMode && !justEnteredEditMode) {
             nextSelection();
           }
           justEnteredEditMode = false;
           break;
         case 'Team Setup':
-          clearTimeout(holdTimeout);
+          clearTimeout(holdTimeout); // Cancel action because A wasn't held for long enough
           if (isEditMode && !justEnteredEditMode) {
             nextSelection();
           }
           justEnteredEditMode = false;
           break;
         case 'Game':
-          if (pendingAdjustment) {
+          if (pendingAdjustment) { // Alter Team 1's goals
             applyStatChange(1, 'goals', pendingAdjustment === 'increase' ? 1 : -1);
             pendingAdjustment = null;
           }
           break;
         case 'Card Reporting':
-          selectedIndex = (selectedIndex + 1) % cardFields.length;
+          selectedIndex = (selectedIndex + 1) % cardFields.length; // Change field being edited
           renderFields();
           break;
         case 'Game Summary':
@@ -540,7 +549,7 @@
         case 'Game':
           if (!pendingAdjustment) {
             pendingAdjustment = 'increase'
-          } else {
+          } else { // Alter Team 2's goals
             applyStatChange(2, 'goals', pendingAdjustment === 'increase' ? 1 : -1);
             pendingAdjustment = null;
           }
@@ -567,7 +576,7 @@
         case 'Game':
           if (!pendingAdjustment) {
             pendingAdjustment = 'decrease'
-          } else {
+          } else { // Alter Team 2's subs
             applyStatChange(2, 'subs', pendingAdjustment === 'increase' ? 1 : -1);
             pendingAdjustment = null;
           }
@@ -586,7 +595,7 @@
     document.getElementById('btnC').addEventListener('click', () => {
       switch (mode) {
         case 'Team Setup':
-          if (!isEditMode) {
+          if (!isEditMode) { // Change mode to Game Setup
             mode = 'Game Setup';
             updateMode();
           }
@@ -594,17 +603,17 @@
         case 'Game Setup':
           break;
         case 'Game':
-          if (pendingAdjustment) {
+          if (pendingAdjustment) { // Alter Team 1's subs
             applyStatChange(1, 'subs', pendingAdjustment === 'increase' ? 1 : -1);
             pendingAdjustment = null;
-          } else {
+          } else { // Enter Card Reporting
             mode = 'Card Reporting';
             selectedIndex = 0;
             isEditMode = true;
             updateMode();
           }
           break;
-        case 'Card Reporting':
+        case 'Card Reporting': // Cancel Card Reporting
           mode = 'Game';
           renderGameScreen();
           break;
@@ -616,6 +625,7 @@
        }
     });
     
+    // Button E hold logic
     document.getElementById('btnE').addEventListener('mousedown', () => {
       if (mode === 'Game') {
         holdTimeout = setTimeout(() => {
@@ -628,37 +638,36 @@
     document.getElementById('btnE').addEventListener('mouseup', () => {
       switch (mode) {
         case 'Game Setup':
-          if (!isEditMode) {
+          if (!isEditMode) { // Change mode to Team Setup
             mode = 'Team Setup';
             updateMode();
           }
           break;
-        case 'Team Setup':
+        case 'Team Setup': // Start Game
           if (!isEditMode) {
             mode = 'Game';
             updateMode();
           }
           break;
         case 'Game':
-          clearTimeout(holdTimeout);
-          if (sectionEnd) {
+          clearTimeout(holdTimeout); // Cancel action because A wasn't held for long enough
+          if (sectionEnd) { // Move to next game section
             sectionEnd = false
             nextSection(sectionInfo[sectionIndex].name,
             sectionInfo[sectionIndex].minutes);
-          } else if (gameTimer.isPaused() === true) {
+          } else if (gameTimer.isPaused() === true) { // start/stop timer
             gameTimer.resume();
           } else {
             gameTimer.pause();
           }
           break;
-        case 'Card Reporting':
+        case 'Card Reporting': // Submit and report current card, return to game
           cardReports.push({
             color: cardFields[0].value,
             team: cardFields[1].value,
             playerNum: cardFields[2].value,
             reason: cardFields[3].value
           });
-          alert('Card saved:' + cardReports[cardReports.length - 1]);
           mode = 'Game';
           renderGameScreen();
           break;
@@ -670,6 +679,7 @@
       }
     });
 
+    // Timer creator
     function startTimer(durationInSeconds, parentElement, onEndCallback) {
         if (!onEndCallback) onEndCallback = function () {};
 
@@ -687,7 +697,7 @@
             timerDiv.textContent = minutes + ':' + seconds;
         }
 
-        function tick() {
+        function tick() { // Increment timer
             if (!paused && remaining > 0) {
                 remaining--;
                 updateDisplay();
@@ -722,7 +732,7 @@
     }
 
     
-    function renderStats() {
+    function renderStats() { // Generate game interface
       const team1Name = teamFields[0].value.join('');
       const team2Name = teamFields[1].value.join('');
       statsDiv.innerHTML = '';
@@ -745,7 +755,7 @@
         return col;
     }
     
-    function applyStatChange(team, type, amount) {
+    function applyStatChange(team, type, amount) { // increase or decrease goals or sub count
       switch (team.toString() + type) {
         case '1goals':
           teamStats.team1.goals = Math.max(0, teamStats.team1.goals + amount);
@@ -766,11 +776,11 @@
     function nextSection(name, minutes) {
       pendingAdjustment = null;
       if (sectionIndex === 3 && (gameFields[3].value === false || 
-      teamStats.team1.goals !== teamStats.team2.goals)) {
+      teamStats.team1.goals !== teamStats.team2.goals)) { // Test if game should end
         endGame();
-      } else if (sectionIndex === 5) {
+      } else if (sectionIndex === 5) { // Test if game should end
         endGame();
-      } else {  
+      } else { // Go to the next game section
         sectionEnd = false;
         sectionIndex++;
         modeHeader.innerText = name;
@@ -781,7 +791,7 @@
       }
     }
     
-    function endGame() {
+    function endGame() { // End game, display score & cards reported summary
       mode = 'Game Summary';
       modeHeader.innerText = 'Game Summary';
       fieldsDiv.innerHTML = '';
@@ -808,7 +818,7 @@
       summaryContainer.appendChild(makeTeamColumn(team2Name, teamStats.team2.goals));
       fieldsDiv.appendChild(summaryContainer);
 
-      if (cardReports.length > 0) {
+      if (cardReports.length > 0) { // Display cards if any are reported
         const cardsHeader = document.createElement('div');
         cardsHeader.classList.add('card-header');
         cardsHeader.innerText = 'Cards:';
@@ -820,7 +830,7 @@
             `${card.color} Card | Team ${card.team} | #${card.playerNum} | ${card.reason}`;
           fieldsDiv.appendChild(cardDiv);
         });
-      } else {
+      } else { // No cards are reported
         const noCards = document.createElement('div');
         noCards.classList.add('cards');
         noCards.style.fontSize = '1.5rem';
@@ -829,7 +839,7 @@
       }
     }
 
-    function renderGameScreen() {
+    function renderGameScreen() { // Get back to game screen after card reporting
       fieldsDiv.innerHTML = '';
       fieldsDiv.appendChild(gameTimer.element);
       renderStats();
