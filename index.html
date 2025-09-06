@@ -72,7 +72,9 @@
     }
 
     .edit-mode {
-      margin-top: 10px;
+      position: absolute;
+      bottom: 15px;
+      right: 25px;
       color: #ffffff;
       font-weight: bold;
       font-size: 1.5rem;
@@ -541,10 +543,14 @@
     document.getElementById('btnB').addEventListener('click', () => {
       switch (mode) {
         case 'Game Setup':
-          increaseValue();
+          if (isEditMode) {
+            increaseValue();
+          }
           break;
         case 'Team Setup':
-          increaseValue();
+          if (isEditMode) {
+            increaseValue();
+          }
           break;
         case 'Game':
           if (!pendingAdjustment) {
@@ -568,10 +574,14 @@
     document.getElementById('btnD').addEventListener('click', () => {
       switch (mode) {
         case 'Game Setup':
-          decreaseValue();
+          if (isEditMode) {
+            decreaseValue();
+          }
           break;
         case 'Team Setup':
-          decreaseValue();
+          if (isEditMode) {
+            decreaseValue();
+          }
           break;
         case 'Game':
           if (!pendingAdjustment) {
